@@ -1,15 +1,21 @@
-# Extracting the data we want
+# Extracting data from the EDGAR files
 import glob
+import sqlite3
 import polars as pl
 
 
 def read_folder(directory):
     """ read all of the data out of a given folder """
-    dtype_overrides = {'adsh': pl.String, 'cik': pl.String, 'aciks': pl.String}
+    dtype_overrides = {'adsh': pl.String, 'cik': pl.String, 'aciks': pl.String,
+                       'ddate': pl.String
+                       }
     num = pl.read_csv(directory + '/num.txt', separator='\t', dtypes=dtype_overrides)
     sub = pl.read_csv(directory + '/sub.txt', separator='\t', dtypes=dtype_overrides)
     tag = pl.read_csv(directory + '/tag.txt', separator='\t', dtypes=dtype_overrides, truncate_ragged_lines=True)
     pre = pl.read_csv(directory + '/pre.txt', separator='\t', dtypes=dtype_overrides)
+
+    # format data
+    num = num.with_columns(pl.col('ddate').str.to_date(format='%Y%m%d'))
 
     return sub, tag, num, pre
 
@@ -27,8 +33,11 @@ def filter_statements(sub, tag, num, pre):
     return sub, tag, num, pre
 
 
-def accumulate_data():
+def accumulate_data(rerun=False):
     """ put together the datasets  """
+    if not rerun:
+        raise Exception('Are you sure you want to re-run this?')
+
     all_data = glob.glob('data/raw/*')
     all_data.sort()
 
@@ -44,3 +53,10 @@ def accumulate_data():
         num.write_database('num', db_url, if_table_exists='append')
         pre.write_database('pre', db_url, if_table_exists='append')
 
+
+def index_data():
+    """ create indexes for commonly accessed data """
+    with sqlite3.connect('data/processed/all10k.db') as con:
+        cur = con.cursor()
+        cur.execute("""CREATE INDEX tag_idx ON num(tag);""")
+        cur.execute("""CREATE INDEX yr_idx ON sub(fy);""")
