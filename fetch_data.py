@@ -11,9 +11,9 @@ def get_entries(year, columns):
     # to change: select all companies w/ null values if the entries are not there
     # change to a right join, drop documne adsh
     query = """ SELECT * FROM
-                (SELECT adsh, tag, strftime('%Y', ddate) AS data_year, uom, value,
-                 footnote FROM num
-                 WHERE (data_year=:year) AND {tagfilters}
+                (SELECT adsh, tag, ddate, dyear, version, coreg, qtrs, 
+                 uom, value, footnote FROM num
+                 WHERE (dyear=:year) AND {tagfilters}
                 ) AS number_table
                 INNER JOIN
                 (SELECT adsh AS adsh_, cik, name, period AS period_filed, prevrpt,
@@ -29,7 +29,7 @@ def get_entries(year, columns):
 
     params = {f'tag{i}': coli for i, coli in enumerate(columns)}
     params.update(year=str(year))
-    print(params)
+
     entries = pd.read_sql_query(query, con, params=params,
                                 dtype={'prevrpt': int, 'value': float})
 
@@ -38,3 +38,7 @@ def get_entries(year, columns):
     entries['prevrpt'] = (entries['prevrpt'] == 1)
 
     return entries
+
+
+def process_to_table(data):
+    pass
