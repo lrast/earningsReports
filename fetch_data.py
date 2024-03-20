@@ -12,7 +12,7 @@ def get_data(year, columns):
     """
     # 1. get numerical data entries
     numerical_data = get_numbers(year, columns)
-    numerical_data = process_to_table(numerical_data)
+    numerical_data, notes = process_to_table(numerical_data)
 
     document_data = get_submissions(year)
 
@@ -60,6 +60,16 @@ def get_submissions(year):
     document_data = document_data.drop('instance', axis=1)
 
     return document_data
+
+
+def get_years():
+    con = sqlite3.connect('data/processed/all10k.db')
+
+    all_years = pd.read_sql_query("""SELECT DISTINCT fy FROM sub;""", con)
+
+    all_years = all_years[~all_years['fy'].isnull()]
+
+    return all_years['fy'].to_list()
 
 
 def process_to_table(numerical_data):
