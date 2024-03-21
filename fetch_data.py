@@ -118,9 +118,17 @@ def process_to_table(numerical_data):
             if dup_rows.shape[0] == 1:
                 return dup_rows
 
+        # multiple currencies
+        if not dup_rows['uom'].duplicated().all():
+            dup_rows = dup_rows[dup_rows['uom'] == 'USD']
+            if dup_rows.shape[0] == 1:
+                return dup_rows
+
         # are all of the rows the same anyway?
         if dup_rows['value'].duplicated().all():
             return dup_rows.iloc[0:1]
+
+        print(dup_rows)
 
         raise Exception('Failure to remove duplicated data')
 

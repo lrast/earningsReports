@@ -1,9 +1,9 @@
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, callback, Output, Input
 import dash_ag_grid as dag
 
-from fetch_data import get_data, get_years
 
-df = get_data(2022, ['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues'])
+from fetch_data import get_data, get_years
+from serve_data import transform_to_links
 
 app = Dash(__name__)
 
@@ -11,36 +11,66 @@ columnDefs = [
     {'field': 'name'},
     {'field': 'AssetsCurrent', "filter": "agNumberColumnFilter"},
     {'field': 'LiabilitiesCurrent', "filter": "agNumberColumnFilter"},
-    {'field': 'Revenues', "filter": "agNumberColumnFilter"}
+    {'field': 'Revenues', "filter": "agNumberColumnFilter"},
+    {'field': 'period_filed'},
+    {'field': 'url', 'cellRenderer': 'markdown'}
 ]
 
 
 grid = dag.AgGrid(
-    id="finanicals-table",
-    rowData=df.to_dict("records"),
+    id="financials-table",
     columnDefs=columnDefs,
     style={"height": 600, "width": "100%"}
 )
 
-years = get_years()
-
 # to do: improve arrangement of page
-# to do: load our data, allow the loaded data to change
-# to do: make the numbers more readable
+# build a buffer
+# improve query speed
 # to do: make the names into urls
+
 
 app.layout = html.Div([
                         html.Div([
                               html.Label(['year:']),
-                              dcc.Dropdown(years, id='year-dropdown'),
+                              dcc.Dropdown(get_years(), '2022',
+                                           id='year-dropdown',
+                                           clearable=False),
                             ], style={'width': '33.33%'}),
                         html.Div([
                               html.Label(['units']),
                               dcc.Dropdown(['$', 'millions $', 'billions $'],
-                                           id='unit-dropdown'),
+                                           '$',
+                                           id='unit-dropdown',
+                                           clearable=False),
                             ], style={'width': '33.33%'}),
-                        grid
+                        dcc.Loading(
+                            id="loading-1",
+                            type="default",
+                            children=grid
+                        )
                        ])
+
+
+@callback(
+    Output("financials-table", "rowData"),
+    Input('year-dropdown', 'value'),
+    Input('unit-dropdown', 'value')
+)
+def update_unit(year, unit):
+    print(year, unit)
+
+    columns = ['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']
+    data = get_data(year, columns)
+    data = transform_to_links(data)
+
+    if unit == 'millions $':
+        data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] = data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] / 10**6
+
+    if unit == 'billions $':
+        data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] = data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] / 10**9
+
+    return data.to_dict("records")
+
 
 if __name__ == "__main__":
     app.run(debug=False)
