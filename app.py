@@ -2,13 +2,20 @@ from dash import Dash, dcc, html, callback, Output, Input
 import dash_ag_grid as dag
 
 
-from fetch_data import get_data, get_years
-from serve_data import transform_to_links
+from fetch_data import get_years
+from serve_data import DataBuffer
+
+
+# to do: improve arrangement of page
+# improve query speed
+# investigate other columns
+# fetch price data
+
 
 app = Dash(__name__)
 
 columnDefs = [
-    {'field': 'name'},
+    {'field': 'name', 'filter': 'agTextColumnFilter'},
     {'field': 'AssetsCurrent', "filter": "agNumberColumnFilter"},
     {'field': 'LiabilitiesCurrent', "filter": "agNumberColumnFilter"},
     {'field': 'Revenues', "filter": "agNumberColumnFilter"},
@@ -23,11 +30,7 @@ grid = dag.AgGrid(
     style={"height": 600, "width": "100%"}
 )
 
-# to do: improve arrangement of page
-# build a buffer
-# improve query speed
-# to do: make the names into urls
-
+data_buffer = DataBuffer()
 
 app.layout = html.Div([
                         html.Div([
@@ -57,19 +60,7 @@ app.layout = html.Div([
     Input('unit-dropdown', 'value')
 )
 def update_unit(year, unit):
-    print(year, unit)
-
-    columns = ['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']
-    data = get_data(year, columns)
-    data = transform_to_links(data)
-
-    if unit == 'millions $':
-        data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] = data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] / 10**6
-
-    if unit == 'billions $':
-        data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] = data[['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']] / 10**9
-
-    return data.to_dict("records")
+    return data_buffer.fetch(year, unit).to_dict("records")
 
 
 if __name__ == "__main__":
