@@ -1,4 +1,4 @@
-# 'backend' functions for working with data between the database and frontend
+# backend functions for working with data between the database and frontend
 
 from fetch_data import get_data
 
@@ -11,7 +11,12 @@ class DataBuffer(object):
         super(DataBuffer, self).__init__()
         self.year = None
         self.current_data = None
-        self.columns = ['AssetsCurrent', 'LiabilitiesCurrent', 'Revenues']
+        self.columns = ['Assets', 'AssetsCurrent',  'Liabilities', 'LiabilitiesCurrent',
+                        'Revenues', 'EntityPublicFloat', 'EarningsPerShareBasic',
+                        'EarningsPerShareDiluted',
+                        'LiabilitiesAndStockholdersEquity', 'StockholdersEquity',
+                        'CommonStockDividendsPerShareDeclared'
+                        ]
 
     def fetch(self, year, unit):
         """ primary interface:
@@ -24,7 +29,18 @@ class DataBuffer(object):
         units = {'$': 1, 'millions $': 1E6, 'billions $': 1E9}
         to_return[self.columns] = to_return[self.columns] / units[unit]
 
-        return transform_to_links(to_return)
+        return transform_to_links(to_return), self.fetch_display_columns()
+
+    def fetch_display_columns(self):
+        display_columns = [
+                            {'field': 'name', 'filter': 'agTextColumnFilter'},
+                            {'field': 'url', 'cellRenderer': 'markdown'}
+                        ]
+
+        for col_name in self.columns:
+            display_columns.append({'field': col_name,
+                                    'filter': "agNumberColumnFilter"})
+        return display_columns
 
     def reset_buffer(self, year):
         """ fetch data for a year """

@@ -54,17 +54,16 @@ def accumulate_data(rerun=False):
         pre.write_database('pre', db_url, if_table_exists='append')
 
 
-def index_data():
-    """ create indexes for commonly accessed data """
-    with sqlite3.connect('data/processed/all10k.db') as con:
-        cur = con.cursor()
-        cur.execute("""CREATE INDEX IF NOT EXISTS tag_idx ON num(tag);""")
-        cur.execute("""CREATE INDEX IF NOT EXISTS dyr_idx ON num(dyear);""")
-        cur.execute("""CREATE INDEX IF NOT EXISTS yr_idx ON sub(fy);""")
-
-
 def create_year_column():
     with sqlite3.connect('data/processed/all10k.db') as con:
         cur = con.cursor()
         cur.execute("""ALTER TABLE num ADD COLUMN dyear TEXT""")
         cur.execute("""UPDATE num SET dyear = strftime('%Y', ddate);""")
+
+
+def index_data():
+    """ create indexes for commonly accessed data """
+    with sqlite3.connect('data/processed/all10k.db') as con:
+        cur = con.cursor()
+        cur.execute("""CREATE INDEX IF NOT EXISTS num_idx_tagxdyr ON num(tag, dyear);""")
+        cur.execute("""CREATE INDEX IF NOT EXISTS yr_idx ON sub(fy);""")

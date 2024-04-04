@@ -14,23 +14,13 @@ from serve_data import DataBuffer
 
 app = Dash(__name__)
 
-columnDefs = [
-    {'field': 'name', 'filter': 'agTextColumnFilter'},
-    {'field': 'AssetsCurrent', "filter": "agNumberColumnFilter"},
-    {'field': 'LiabilitiesCurrent', "filter": "agNumberColumnFilter"},
-    {'field': 'Revenues', "filter": "agNumberColumnFilter"},
-    {'field': 'period_filed'},
-    {'field': 'url', 'cellRenderer': 'markdown'}
-]
-
+data_buffer = DataBuffer()
 
 grid = dag.AgGrid(
     id="financials-table",
-    columnDefs=columnDefs,
     style={"height": 600, "width": "100%"}
 )
 
-data_buffer = DataBuffer()
 
 app.layout = html.Div([
                         html.Div([
@@ -56,11 +46,13 @@ app.layout = html.Div([
 
 @callback(
     Output("financials-table", "rowData"),
+    Output("financials-table", "columnDefs"),
     Input('year-dropdown', 'value'),
     Input('unit-dropdown', 'value')
 )
 def update_unit(year, unit):
-    return data_buffer.fetch(year, unit).to_dict("records")
+    data, columnDefs = data_buffer.fetch(year, unit)
+    return data.to_dict("records"), columnDefs
 
 
 if __name__ == "__main__":
