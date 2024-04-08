@@ -29,17 +29,19 @@ class DataBuffer(object):
         units = {'$': 1, 'millions $': 1E6, 'billions $': 1E9}
         to_return[self.columns] = to_return[self.columns] / units[unit]
 
-        return transform_to_links(to_return), self.fetch_display_columns()
+        return to_return, self.fetch_display_columns()
 
     def fetch_display_columns(self):
         display_columns = [
                             {'field': 'name', 'filter': 'agTextColumnFilter'},
-                            {'field': 'url', 'cellRenderer': 'markdown'}
+                            {'field': 'url',
+                             "cellRenderer": "FormatURL"}
                         ]
 
         for col_name in self.columns:
             display_columns.append({'field': col_name,
-                                    'filter': "agNumberColumnFilter"})
+                                    'filter': "agNumberColumnFilter",
+                                    "valueFormatter": {"function": "withCaveats(params)"}})
         return display_columns
 
     def reset_buffer(self, year):

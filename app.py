@@ -7,7 +7,6 @@ from serve_data import DataBuffer
 
 
 # to do: improve arrangement of page
-# improve query speed
 # investigate other columns
 # fetch price data
 

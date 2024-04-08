@@ -11,11 +11,12 @@ def get_data(year, columns):
         numerical data -> duplicate removal -> pivot and join
 
     """
-    # 1. get numerical data entries
     numerical_data = get_numbers(year, columns)
     numerical_data, notes = remove_duplicates(numerical_data)
 
     numerical_data = pivot_to_table(numerical_data)
+    #notes = pivot_to_table(notes)
+    #append notes to numerical data
 
     document_data = get_submissions(year)
 
