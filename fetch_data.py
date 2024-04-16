@@ -1,9 +1,7 @@
 # simple data fetching
-import sqlite3
-import pandas as pd
-
-from web_utilities import original_statement_urls
-from data_transformation import remove_duplicates
+from database.read_data import get_numbers, get_submissions
+from data_transformation import submission_processing, numbers_processing
+from validate_impute import VIConst
 
 
 def get_data(year, columns):
@@ -12,76 +10,45 @@ def get_data(year, columns):
 
     """
     numerical_data = get_numbers(year, columns)
-    numerical_data, notes = remove_duplicates(numerical_data)
+    print('numbers fetched')
+    numerical_data = numbers_processing(numerical_data)
 
-    numerical_data = pivot_to_table(numerical_data)
+    print('numbers cleaned')  # to do: speed up data cleaning
     #notes = pivot_to_table(notes)
     #append notes to numerical data
+    Asset = VIConst('Assets') - VIConst('LiabilitiesAndStockholdersEquity')
+    Equity = VIConst('Assets') - VIConst('Liabilities') - VIConst('StockholdersEquity')
 
-    document_data = get_submissions(year)
+    Asset.validate_and_impute(numerical_data)
+    Equity.validate_and_impute(numerical_data)
+
+    document_data = submission_processing(get_submissions(year))
+
+    print('documents fetched')
 
     return numerical_data.merge(document_data, on='adsh')
 
 
-def get_numbers(year, columns):
-    """ Fetch all columns from a given year """
-    con = sqlite3.connect('data/processed/all10k.db')
+def balance_sheet_data(year):
+    """ Balance sheet specifice data processing  """
+    balance_cols = ['Assets', 'Liabilities', 'StockholdersEquity',
+                    'LiabilitiesAndStockholdersEquity',
+                    ]
 
-    query = """ SELECT adsh, tag, ddate, dyear, version, coreg, qtrs, 
-                 uom, value, footnote FROM num
-                 WHERE (dyear=:year) AND {tagfilters}
-            """
+    nums, notes = numbers_processing(get_numbers(year, balance_cols))
+    # return numerical_data, notes
 
-    tagfilters = "(" + \
-                 " OR ".join([f"tag = :tag{i}" for i in range(len(columns))])\
-                 + ")"
-    query = query.format(tagfilters=tagfilters)
+    # check global constraints (assets == LiabilitiesAndStockholdersEquity)
+    unequal = nums[~nums[['Assets', 'LiabilitiesAndStockholdersEquity']].isna().any() &
+                   nums['Assets'] != nums['LiabilitiesAndStockholdersEquity']].index
+    notes.loc[unequal, 'Assets_notes'] = '*'
 
-    params = {f'tag{i}': coli for i, coli in enumerate(columns)}
-    params.update(year=str(year))
+    all_entries = ~nums[['Assets', 'Liabilities', 'StockholdersEquity']].isna().any(axis=1)
 
-    entries = pd.read_sql_query(query, con, params=params,
-                                dtype={'value': float, 'adsh': str})
-
-    return entries
+    # impute missing data values
+    # Fill assets in from LiabilitiesAndStockholdersEquity
+    nums['Assets'].fillna(value=nums['LiabilitiesAndStockholdersEquity'], inplace=True)
 
 
-def get_submissions(year):
-    """ Fetch company information for submissions in a given year """
-    con = sqlite3.connect('data/processed/all10k.db')
+    # we need two of the three (assets, Liabilities, StockholdersEquity)
 
-    query = """SELECT adsh, cik, name, period AS period_filed, prevrpt, instance
-                FROM sub WHERE fy=:year
-            """
-
-    document_data = pd.read_sql_query(query, con, params={'year': str(year)},
-                                      dtype={'prevrpt': int, 'adsh': str})
-
-    document_data['period_filed'] = pd.to_datetime(document_data['period_filed'])
-    document_data['prevrpt'] = (document_data['prevrpt'] == 1)
-    document_data['url'] = original_statement_urls(document_data)
-
-    document_data = document_data.drop('instance', axis=1)
-
-    return document_data
-
-
-def get_years():
-    con = sqlite3.connect('data/processed/all10k.db')
-
-    all_years = pd.read_sql_query("""SELECT DISTINCT fy FROM sub;""", con)
-
-    all_years = all_years[~all_years['fy'].isnull()]
-
-    return all_years['fy'].to_list()
-
-
-def pivot_to_table(numerical_data):
-    """ pivot 
-    """
-    pivot = numerical_data[['adsh', 'tag', 'value']].pivot_table(index='adsh',
-                                                                 columns='tag',
-                                                                 values='value'
-                                                   ).reset_index()
-
-    return pivot

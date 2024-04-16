@@ -11,12 +11,14 @@ class DataBuffer(object):
         super(DataBuffer, self).__init__()
         self.year = None
         self.current_data = None
-        self.columns = ['Assets', 'AssetsCurrent',  'Liabilities', 'LiabilitiesCurrent',
-                        'Revenues', 'EntityPublicFloat', 'EarningsPerShareBasic',
-                        'EarningsPerShareDiluted',
-                        'LiabilitiesAndStockholdersEquity', 'StockholdersEquity',
-                        'CommonStockDividendsPerShareDeclared'
+        self.columns = ['Assets', 'Liabilities', 'LiabilitiesAndStockholdersEquity',
+                        'StockholdersEquity'
                         ]
+                        #  'AssetsCurrent', 'LiabilitiesCurrent',
+                        #'CommonStockDividendsPerShareDeclared',
+                        #'Revenues', 'EntityPublicFloat', 'EarningsPerShareBasic',
+                        #'EarningsPerShareDiluted',
+                        #]
 
     def fetch(self, year, unit):
         """ primary interface:

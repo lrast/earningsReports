@@ -1,5 +1,3 @@
-console.log('did this run?')
-
 var dagfuncs = window.dashAgGridFunctions = window.dashAgGridFunctions || {};
 var dagcomponentfuncs = (window.dashAgGridComponentFunctions = window.dashAgGridComponentFunctions || {});
 

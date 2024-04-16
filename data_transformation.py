@@ -2,13 +2,36 @@
 
 import pandas as pd
 
+from web_utilities import original_statement_urls
 
-def filter_and_clean_data(numerical_data):
+
+def submission_processing(document_data):
+    """ processing stages for  """
+    document_data['url'] = original_statement_urls(document_data)
+
+    document_data = document_data.drop('instance', axis=1)
+    return document_data
+
+
+def numbers_processing(numerical_data):
     """ Use the metadata to make sure that the data says what we think it says.
      """
+    numerical_data, notes_dups = remove_duplicates(numerical_data)
 
-    # unit of measurement: for now filter only USD measurements
-    pass
+    # to do: incorporate notes from duplicate removal
+
+    pivot_data = numerical_data[['adsh', 'tag', 'value']
+                                ].pivot_table(index='adsh',
+                                              columns='tag',
+                                              values='value'
+                                              )
+
+    notes = pd.DataFrame(index=pivot_data.index,
+                         columns=list(map(lambda x: x+'_notes',
+                                          pivot_data.columns))
+                         )
+
+    return pivot_data.join(notes)
 
 
 def remove_duplicates(numerical_data):
@@ -81,6 +104,4 @@ def impute_columns(data):
 
 def compute_ratios(data):
     pass
-
-
 
