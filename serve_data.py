@@ -11,10 +11,18 @@ class DataBuffer(object):
         super(DataBuffer, self).__init__()
         self.year = None
         self.current_data = None
-        self.columns = ['Assets', 'Liabilities', 'LiabilitiesAndStockholdersEquity',
-                        'StockholdersEquity'
+        self.columns = [
+                        'Revenues', 'CommonStockDividendsPerShareDeclared',
+                        'CostsAndExpenses', 'NetIncomeLoss', 'OperatingIncomeLoss',
+                        'RevenueFromContractWithCustomerExcludingAssessedTax',
+                        'ProfitLoss', 'GrossProfit'
                         ]
-                        #  'AssetsCurrent', 'LiabilitiesCurrent',
+
+        __ = ['Assets', 'Liabilities', 'AssetsCurrent', 'LiabilitiesCurrent',
+              'StockholdersEquity', 'CurrentAssets/Liabilities', 'WorkingCapital/Debt',
+              ]
+
+                        #  
                         #'CommonStockDividendsPerShareDeclared',
                         #'Revenues', 'EntityPublicFloat', 'EarningsPerShareBasic',
                         #'EarningsPerShareDiluted',
@@ -34,11 +42,7 @@ class DataBuffer(object):
         return to_return, self.fetch_display_columns()
 
     def fetch_display_columns(self):
-        display_columns = [
-                            {'field': 'name', 'filter': 'agTextColumnFilter'},
-                            {'field': 'url',
-                             "cellRenderer": "FormatURL"}
-                        ]
+        display_columns = []
 
         for col_name in self.columns:
             display_columns.append({'field': col_name,

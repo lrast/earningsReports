@@ -13,9 +13,11 @@ def submission_processing(document_data):
     return document_data
 
 
-def numbers_processing(numerical_data):
+def numbers_processing(numerical_data, uom=None):
     """ Use the metadata to make sure that the data says what we think it says.
      """
+    # filter only columns that use the correct unit of measure
+
     numerical_data, notes_dups = remove_duplicates(numerical_data)
 
     # to do: incorporate notes from duplicate removal
@@ -95,13 +97,4 @@ def remove_duplicates(numerical_data):
     numerical_data = pd.concat([unique_rows, unified_rows])
 
     return numerical_data, pd.DataFrame(notes)
-
-
-def impute_columns(data):
-    """ impute the values of missing columns from others """
-    pass
-
-
-def compute_ratios(data):
-    pass
 

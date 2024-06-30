@@ -38,6 +38,7 @@ class VIConst(object):
         # only validate columns without nan
         to_check = ~data[self.atoms].isna().any(axis=1)
 
+        # TO DO: round the number of significant digits
         column_results = pd.eval(self.expression, local_dict={'df': data[to_check]})
 
         validation_fail = column_results.index[column_results != 0.]

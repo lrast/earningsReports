@@ -1,6 +1,6 @@
 # simple data fetching
 from database.read_data import get_numbers, get_submissions
-from data_transformation import submission_processing, numbers_processing
+from data_preprocessing import submission_processing, numbers_processing
 from validate_impute import VIConst
 
 
@@ -9,46 +9,118 @@ def get_data(year, columns):
         numerical data -> duplicate removal -> pivot and join
 
     """
-    numerical_data = get_numbers(year, columns)
-    print('numbers fetched')
-    numerical_data = numbers_processing(numerical_data)
+    # to do: parse requested columns into data to fetch.
+    balance_cols = ['Assets', 'Liabilities', 'AssetsCurrent', 'LiabilitiesCurrent',
+                    'LiabilitiesAndStockholdersEquity', 'StockholdersEquity',
+                    'CurrentAssets/Liabilities', 'WorkingCapital/Debt'
+                    ]
 
-    print('numbers cleaned')  # to do: speed up data cleaning
-    #notes = pivot_to_table(notes)
-    #append notes to numerical data
-    Asset = VIConst('Assets') - VIConst('LiabilitiesAndStockholdersEquity')
-    Equity = VIConst('Assets') - VIConst('Liabilities') - VIConst('StockholdersEquity')
+    to_fetch = {'balance': False}
 
-    Asset.validate_and_impute(numerical_data)
-    Equity.validate_and_impute(numerical_data)
+    for col in columns:
+        if col in balance_cols:
+            to_fetch['balance'] = True
+
+    balance_data = balance_sheet_ratios(get_balance_sheet_data(year))
+
+    operations_data = get_operations_data(year)
 
     document_data = submission_processing(get_submissions(year))
 
-    print('documents fetched')
+    all_data = balance_data.merge(operations_data, on='adsh', how='outer')
 
-    return numerical_data.merge(document_data, on='adsh')
+    return all_data.merge(document_data, on='adsh', how='outer')
 
 
-def balance_sheet_data(year):
+def get_balance_sheet_data(year):
     """ Balance sheet specifice data processing  """
-    balance_cols = ['Assets', 'Liabilities', 'StockholdersEquity',
-                    'LiabilitiesAndStockholdersEquity',
+    balance_cols = ['Assets', 'Liabilities', 'AssetsCurrent', 'LiabilitiesCurrent',
+                    'LiabilitiesAndStockholdersEquity', 'StockholdersEquity',
                     ]
 
-    nums, notes = numbers_processing(get_numbers(year, balance_cols))
-    # return numerical_data, notes
+    balance_data = numbers_processing(get_numbers(year, balance_cols))
 
-    # check global constraints (assets == LiabilitiesAndStockholdersEquity)
-    unequal = nums[~nums[['Assets', 'LiabilitiesAndStockholdersEquity']].isna().any() &
-                   nums['Assets'] != nums['LiabilitiesAndStockholdersEquity']].index
-    notes.loc[unequal, 'Assets_notes'] = '*'
+    # constraints on the data
+    AssetvsTotal = VIConst('Assets') - VIConst('LiabilitiesAndStockholdersEquity')
+    EquityisDiff = VIConst('Assets') - VIConst('Liabilities') - VIConst('StockholdersEquity')
 
-    all_entries = ~nums[['Assets', 'Liabilities', 'StockholdersEquity']].isna().any(axis=1)
+    AssetvsTotal.validate_and_impute(balance_data)
+    EquityisDiff.validate_and_impute(balance_data)
 
-    # impute missing data values
-    # Fill assets in from LiabilitiesAndStockholdersEquity
-    nums['Assets'].fillna(value=nums['LiabilitiesAndStockholdersEquity'], inplace=True)
+    balance_data.drop(['LiabilitiesAndStockholdersEquity', 'LiabilitiesAndStockholdersEquity_notes'],
+                      axis='columns', inplace=True)
+
+    return balance_data
 
 
-    # we need two of the three (assets, Liabilities, StockholdersEquity)
+def balance_sheet_ratios(balance_data):
+    # computing ratios
 
+    # to do: book value per share
+    balance_data['CurrentAssets/Liabilities'] = \
+        balance_data['AssetsCurrent'] / balance_data['LiabilitiesCurrent']
+    balance_data['WorkingCapital/Debt'] = \
+        (balance_data['AssetsCurrent'] - balance_data['LiabilitiesCurrent']) / \
+        balance_data['Liabilities']
+
+    balance_data = make_notes(balance_data, {'CurrentAssets/Liabilities':
+                                             ['AssetsCurrent', 'LiabilitiesCurrent'],
+                                             'WorkingCapital/Debt':
+                                             ['AssetsCurrent', 'LiabilitiesCurrent', 'Liabilities']
+                                             })
+    return balance_data
+
+
+def get_operations_data(year):
+    """ in plain text, we want:
+    Revenues,
+    Net
+    Interest
+    Earnings per share
+    Dividend
+     """
+    operations_cols = ['Revenues', 'CommonStockDividendsPerShareDeclared',
+                       'RevenueFromContractWithCustomerExcludingAssessedTax',
+                       'CostsAndExpenses', 'NetIncomeLoss', 'OperatingIncomeLoss',
+                       'ProfitLoss', 'GrossProfit']
+
+    operations_data = numbers_processing(get_numbers(year, operations_cols))
+
+    return operations_data
+
+
+def earnings_ratios():
+    """in plain text, we want:
+        Net / revenue
+
+    """
+    pass
+
+
+def earnings_balance_ratios():
+    """in plain text, we want:
+        Net / book value
+
+    """
+    pass
+
+
+def price_dependent_ratios():
+    """in plain text, we want:
+    price / earnings
+    price / book value
+    market cap / revenues
+
+    dividend yield
+
+    """
+    pass
+
+
+def make_notes(data, colDependencies):
+    for name, dependencies in colDependencies.items():
+        data[f'{name}_notes'] = None
+        for col in dependencies:
+            data[f'{name}_notes'].fillna(f'{col}_notes')
+
+    return data
