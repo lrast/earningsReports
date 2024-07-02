@@ -27,6 +27,8 @@ persistent_columns = [
                          "cellRenderer": "FormatURL"}
                      ]
 
+
+# this should eventually be replaced by MUI components
 app.layout = html.Div([
                         html.Div([
                               html.Label(['year:']),
@@ -42,16 +44,18 @@ app.layout = html.Div([
                                            clearable=False),
                             ], style={'width': '33.33%'}),
                         html.Div([
+                            html.Label(['columns']),
+                            dcc.Dropdown(data_buffer.possible_cols, data_buffer.columns,
+                                         id='columns-dropdown',
+                                         multi=True)
+                            ], style={'width': '33.33%'}),
+                        html.Div([
                             dcc.Loading(
                                 id="loading-1",
                                 type="default",
                                 children=grid
                             )
                         ])
-
-
-
-
 
                     ])
 
@@ -60,9 +64,11 @@ app.layout = html.Div([
     Output("financials-table", "rowData"),
     Output("financials-table", "columnDefs"),
     Input('year-dropdown', 'value'),
-    Input('unit-dropdown', 'value')
+    Input('unit-dropdown', 'value'),
+    Input('columns-dropdown', 'value')
 )
-def update_unit(year, unit):
+def update_unit(year, unit, columns):
+    data_buffer.columns = columns
     data, columnDefs = data_buffer.fetch(year, unit)
 
     columnDefs = persistent_columns + columnDefs

@@ -50,4 +50,7 @@ def get_years():
     all_years = pd.read_sql_query("""SELECT DISTINCT fy FROM sub;""", con)
     all_years = all_years[~all_years['fy'].isnull()]
 
-    return all_years['fy'].to_list()
+    all_years = all_years['fy'].to_list()
+    all_years.sort(reverse=True)
+
+    return all_years

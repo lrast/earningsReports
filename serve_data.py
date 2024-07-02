@@ -18,15 +18,24 @@ class DataBuffer(object):
                         'ProfitLoss', 'GrossProfit'
                         ]
 
-        __ = ['Assets', 'Liabilities', 'AssetsCurrent', 'LiabilitiesCurrent',
-              'StockholdersEquity', 'CurrentAssets/Liabilities', 'WorkingCapital/Debt',
-              ]
+        self.possible_cols = ['Assets', 'Liabilities', 'StockholdersEquity',
+                              'AssetsCurrent', 'LiabilitiesCurrent', 'CurrentAssets/Liabilities',
+                              'WorkingCapital/Debt', 'Revenues', 'CommonStockDividendsPerShareDeclared',
+                              'CostsAndExpenses', 'NetIncomeLoss', 'OperatingIncomeLoss',
+                              'RevenueFromContractWithCustomerExcludingAssessedTax',
+                              'ProfitLoss', 'GrossProfit']
 
                         #  
                         #'CommonStockDividendsPerShareDeclared',
                         #'Revenues', 'EntityPublicFloat', 'EarningsPerShareBasic',
                         #'EarningsPerShareDiluted',
                         #]
+
+
+    ### !!! To add:
+    # 1. Caching mechanisms
+    # 2. Abilty to display multiple years
+
 
     def fetch(self, year, unit):
         """ primary interface:
