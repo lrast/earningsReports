@@ -5,6 +5,7 @@ import dash_ag_grid as dag
 from database.read_data import get_years
 from serve_data import DataBuffer
 
+import time
 
 # to do: improve arrangement of page
 # investigate other columns
@@ -47,22 +48,20 @@ app.layout = html.Div([
                             html.Label(['columns']),
                             dcc.Dropdown(data_buffer.possible_cols, data_buffer.columns,
                                          id='columns-dropdown',
-                                         multi=True)
+                                         multi=True),
+                            dcc.Loading(id="table-loading", children=[html.Div(id="table_loading-output")],
+                                        type="default"),
                             ], style={'width': '33.33%'}),
                         html.Div([
-                            dcc.Loading(
-                                id="loading-1",
-                                type="default",
-                                children=grid
-                            )
+                            grid
                         ])
-
                     ])
 
 
 @callback(
     Output("financials-table", "rowData"),
     Output("financials-table", "columnDefs"),
+    Output("table_loading-output", "value"),
     Input('year-dropdown', 'value'),
     Input('unit-dropdown', 'value'),
     Input('columns-dropdown', 'value')
@@ -73,7 +72,7 @@ def update_unit(year, unit, columns):
 
     columnDefs = persistent_columns + columnDefs
 
-    return data.to_dict("records"), columnDefs
+    return data.to_dict("records"), columnDefs, 'done'
 
 
 @callback(
