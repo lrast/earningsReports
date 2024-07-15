@@ -66,7 +66,6 @@ app.layout = html.Div([
     Input('columns-dropdown', 'value')
 )
 def update_unit(year, unit, columns):
-    #data_buffer.columns = columns
     data, columnDefs = data_buffer.request(year, unit, columns)
 
     columnDefs = persistent_columns + columnDefs

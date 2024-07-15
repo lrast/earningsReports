@@ -1,7 +1,7 @@
 # simple data fetching
 from database.read_data import get_numbers, get_submissions
 from data_preprocessing import submission_processing, numbers_processing
-from validate_impute import VIConst
+from finance_logic import VIConst
 
 
 def get_data(year, columns):
