@@ -1,4 +1,4 @@
-# tools for validating and imputing data
+# tools for implementing the financial logic
 import pandas as pd
 
 
@@ -49,7 +49,7 @@ class VIConst(object):
     def impute(self, data):
         for missing in self.atoms:
             # we can impute everywhere only one column is na
-            imputable = data[missing].isna() & data[self.atoms].isna().sum(axis=1) 
+            imputable = data[missing].isna() & (data[self.atoms].isna().sum(axis=1) == 1)
 
             for_impute = data[self.atoms][imputable].fillna(0)
             imputed_values = pd.eval(self.expression, local_dict={'df': for_impute})

@@ -5,7 +5,6 @@ import dash_ag_grid as dag
 from database.read_data import get_years
 from serve_data import DataBuffer
 
-import time
 
 # to do: improve arrangement of page
 # investigate other columns
@@ -67,8 +66,8 @@ app.layout = html.Div([
     Input('columns-dropdown', 'value')
 )
 def update_unit(year, unit, columns):
-    data_buffer.columns = columns
-    data, columnDefs = data_buffer.fetch(year, unit)
+    #data_buffer.columns = columns
+    data, columnDefs = data_buffer.request(year, unit, columns)
 
     columnDefs = persistent_columns + columnDefs
 
