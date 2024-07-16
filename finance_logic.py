@@ -11,26 +11,35 @@ def get_balance_sheet_data(year, columns):
     balance_cols = ['Assets', 'Liabilities', 'AssetsCurrent', 'LiabilitiesCurrent',
                     'StockholdersEquity',
                     'CurrentAssets/Liabilities', 'WorkingCapital/Debt',
-                    'LiabilitiesAndStockholdersEquity', 'MinorityInterest',
-                    'StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest', 
+                    'LiabilitiesAndStockholdersEquity',
+                    'StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest',
+                    ] 
+
+    minority_equity_cols = [
+                    'MinorityInterest',
+                    'NonredeemableNoncontrollingInterest',
+                    'RedeemableNoncontrollingInterestEquityCommonCarryingAmount',
+                    'RedeemableNoncontrollingInterestEquityCarryingAmount'
                     ]
+
+    balance_cols += minority_equity_cols
 
     if len(set(balance_cols).intersection(columns)) == 0:
         return
 
     data = get_numbers(year, balance_cols)
 
+    # condense minority equity
+    data['TotalMinorityEquity'] = data[minority_equity_cols].fillna(0.).sum(axis=1)
+
     # constraints on the data
     constraints = {
         'AssetvsTotal': VIConst('Assets') - VIConst('LiabilitiesAndStockholdersEquity'),
-        'MinorityShares': VIConst('StockholdersEquity') + VIConst('MinorityInterest') - \
+        'MinorityShares': VIConst('StockholdersEquity') + VIConst('TotalMinorityEquity') - \
                             VIConst('StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest'),
         'EquityisDiff': VIConst('Assets') - VIConst('Liabilities') - VIConst('StockholdersEquity') \
-                          - VIConst('MinorityInterest') 
+                          - VIConst('TotalMinorityEquity')
     }
-
-    # fill in default value
-    data['MinorityInterest'] = data['MinorityInterest'].fillna(0.)
 
     # run validation
     for k, constraint in constraints.items():
@@ -118,7 +127,7 @@ class VIConst(object):
             imputed_values = pd.eval(self.expression, local_dict={'df': for_impute})
 
             data.loc[imputable, missing] = -1 * self.signs[missing] * imputed_values
-            data.loc[imputable, missing+'_notes'] = '**'
+            data.loc[imputable, missing+'_notes'] = '†'
 
             changes_made = changes_made or imputable.any()
 

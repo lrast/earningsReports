@@ -27,6 +27,7 @@ def get_numbers(year, columns):
     data = pd.read_sql_query(query, con, params=params,
                              dtype={'value': float, 'adsh': str})
 
+    # data processing
     data, notes_dups = remove_duplicates(data)
 
     pivot_data = data[['adsh', 'tag', 'value']
@@ -58,7 +59,6 @@ def get_submissions(year):
 
     document_data['period_filed'] = pd.to_datetime(document_data['period_filed'])
     document_data['prevrpt'] = (document_data['prevrpt'] == 1)
-
     document_data['url'] = original_statement_urls(document_data)
 
     document_data = document_data.drop('instance', axis=1)
