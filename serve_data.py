@@ -3,10 +3,7 @@
 import pandas as pd
 
 from finance_logic import get_balance_sheet_data
-
-from database.read_data import get_submissions
-from data_preprocessing import submission_processing
-
+from read_data import get_submissions
 from utilities import columns_and_notes
 
 
@@ -52,7 +49,7 @@ class DataBuffer(object):
             self.columns = columns
             self.year = year
             self.data = self.get_data(year, columns)
-            self.documents = submission_processing(get_submissions(year))
+            self.documents = get_submissions(year)
         else:
             self.columns = columns
             col_to_fetch = list(set(columns) - set(self.data.columns))

@@ -1,9 +1,7 @@
 # tools for implementing the financial logic
 import pandas as pd
 
-from database.read_data import get_numbers
-from data_preprocessing import numbers_processing
-
+from read_data import get_numbers
 from utilities import make_notes_from_parents, columns_and_notes
 
 
@@ -20,7 +18,7 @@ def get_balance_sheet_data(year, columns):
     if len(set(balance_cols).intersection(columns)) == 0:
         return
 
-    data = numbers_processing(get_numbers(year, balance_cols))
+    data = get_numbers(year, balance_cols)
 
     # constraints on the data
     constraints = {
@@ -36,7 +34,6 @@ def get_balance_sheet_data(year, columns):
 
     # run validation
     for k, constraint in constraints.items():
-        print(k)
         constraint.validate(data)
 
     # run impute
@@ -44,7 +41,6 @@ def get_balance_sheet_data(year, columns):
     while go:
         change = False
         for constraint in constraints.values():
-            print(data.loc['0001437749-22-022143'])
             new = constraint.impute(data)
             change = change or new
 

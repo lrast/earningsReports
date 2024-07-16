@@ -1,39 +1,80 @@
 # data cleaning, imputation, and transformation steps at run time
 
+import sqlite3
 import pandas as pd
 
-from web_utilities import original_statement_urls
+from utilities import original_statement_urls
 
 
-def submission_processing(document_data):
-    """ processing stages for  """
-    document_data['url'] = original_statement_urls(document_data)
-
-    document_data = document_data.drop('instance', axis=1)
-    return document_data
-
-
-def numbers_processing(numerical_data, uom=None):
-    """ Use the metadata to make sure that the data says what we think it says.
+def get_numbers(year, columns):
+    """ Fetch and process all columns from a given year
      """
-    # filter only columns that use the correct unit of measure
+    #to do: filter only columns that use the correct unit of measure
 
-    numerical_data, notes_dups = remove_duplicates(numerical_data)
+    con = sqlite3.connect('data/processed/all10k.db')
+    query = """ SELECT adsh, tag, ddate, dyear, version, coreg, qtrs, 
+                 uom, value, footnote FROM num
+                 WHERE (dyear=:year) AND {tagfilters}
+            """
+    tagfilters = "(" + \
+                 " OR ".join([f"tag = :tag{i}" for i in range(len(columns))])\
+                 + ")"
+    query = query.format(tagfilters=tagfilters)
 
-    # to do: incorporate notes from duplicate removal
+    params = {f'tag{i}': coli for i, coli in enumerate(columns)}
+    params.update(year=str(year))
 
-    pivot_data = numerical_data[['adsh', 'tag', 'value']
-                                ].pivot_table(index='adsh',
-                                              columns='tag',
-                                              values='value'
-                                              )
+    data = pd.read_sql_query(query, con, params=params,
+                             dtype={'value': float, 'adsh': str})
+
+    data, notes_dups = remove_duplicates(data)
+
+    pivot_data = data[['adsh', 'tag', 'value']
+                      ].pivot_table(index='adsh',
+                                    columns='tag',
+                                    values='value'
+                                    )
 
     notes = pd.DataFrame(index=pivot_data.index,
                          columns=list(map(lambda x: x+'_notes',
                                           pivot_data.columns))
                          )
 
+    # to do: incorporate notes from duplicate removal
+
     return pivot_data.join(notes)
+
+
+def get_submissions(year):
+    """ Fetch information for all documents submitted in a given year  """
+    con = sqlite3.connect('data/processed/all10k.db')
+
+    query = """SELECT adsh, cik, name, period AS period_filed, prevrpt, instance
+                FROM sub WHERE fy=:year
+            """
+
+    document_data = pd.read_sql_query(query, con, params={'year': str(year)},
+                                      dtype={'prevrpt': int, 'adsh': str})
+
+    document_data['period_filed'] = pd.to_datetime(document_data['period_filed'])
+    document_data['prevrpt'] = (document_data['prevrpt'] == 1)
+
+    document_data['url'] = original_statement_urls(document_data)
+
+    document_data = document_data.drop('instance', axis=1)
+    return document_data
+
+
+def get_years():
+    con = sqlite3.connect('data/processed/all10k.db')
+
+    all_years = pd.read_sql_query("""SELECT DISTINCT fy FROM sub;""", con)
+    all_years = all_years[~all_years['fy'].isnull()]
+
+    all_years = all_years['fy'].to_list()
+    all_years.sort(reverse=True)
+
+    return all_years
 
 
 def remove_duplicates(numerical_data):
@@ -97,4 +138,3 @@ def remove_duplicates(numerical_data):
     numerical_data = pd.concat([unique_rows, unified_rows])
 
     return numerical_data, pd.DataFrame(notes)
-

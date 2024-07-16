@@ -1,8 +1,7 @@
 from dash import Dash, dcc, html, callback, Output, Input, Patch
 import dash_ag_grid as dag
 
-
-from database.read_data import get_years
+from read_data import get_years
 from serve_data import DataBuffer
 
 
