@@ -7,7 +7,7 @@ from finance_logic import get_balance_sheet_data
 from database.read_data import get_submissions
 from data_preprocessing import submission_processing
 
-from utilities import columns_to_return
+from utilities import columns_and_notes
 
 
 class DataBuffer(object):
@@ -63,7 +63,7 @@ class DataBuffer(object):
 
         to_return = pd.merge(
                             self.documents[['adsh', 'name', 'url']],
-                            self.data[columns_to_return(self.columns)], 
+                            self.data[columns_and_notes(self.columns)], 
                             on='adsh', how='left'
                             )
 

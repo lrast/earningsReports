@@ -1,5 +1,5 @@
 # utilities for columns with notes
-def columns_to_return(columns):
+def columns_and_notes(columns):
     """ Columns and their corresponding notes """
     out = []
     for col_name in columns:
