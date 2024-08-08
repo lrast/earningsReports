@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from finance_logic import get_balance_sheet_data
+from finance_logic import get_balance_sheet_data, get_cash_flow_data
 from read_data import get_submissions
 from utilities import columns_and_notes
 
@@ -18,17 +18,17 @@ class DataBuffer(object):
         self.data = None
         self.documents = None
         self.columns = [
-                        'Assets', 'Liabilities', 'StockholdersEquity',
-                        'AssetsCurrent', 'LiabilitiesCurrent', 'CurrentAssets/Liabilities',
-                        'WorkingCapital/Debt',
+                        'Revenues', 'CostOfRevenue', 'GrossProfit',
+                        'OperatingExpenses',  'OperatingIncomeLoss'
                         ]
 
         self.possible_cols = ['Assets', 'Liabilities', 'StockholdersEquity',
                               'AssetsCurrent', 'LiabilitiesCurrent', 'CurrentAssets/Liabilities',
-                              'WorkingCapital/Debt', 'Revenues', 'CommonStockDividendsPerShareDeclared',
-                              'CostsAndExpenses', 'NetIncomeLoss', 'OperatingIncomeLoss',
-                              'RevenueFromContractWithCustomerExcludingAssessedTax',
-                              'ProfitLoss', 'GrossProfit']
+                              'WorkingCapital/Debt', 
+                              'Revenues', 'CostOfRevenue', 'GrossProfit',
+                              'OperatingExpenses',  'OperatingIncomeLoss',
+                              'CommonStockDividendsPerShareDeclared',
+                              'NetIncomeLoss', 'ProfitLoss']
 
         # 'CommonStockDividendsPerShareDeclared',
         # 'Revenues', 'EntityPublicFloat', 'EarningsPerShareBasic',
@@ -41,28 +41,27 @@ class DataBuffer(object):
         for now, only supporting one year.
         !!! To add: Abilty to display multiple years
         """
-        if set(columns) == set(self.columns) and year == self.year:
+        if self.data is None or year != self.year:
+            # fetch all
+            self.year = year
+            self.documents = get_submissions(year)
+            self.data = self.get_data(year, columns)
+        elif set(columns).issubset(set(self.columns)) and year == self.year:
             # no data to fetch
             pass
-        elif self.data is None or year != self.year:
-            # fetch all
-            self.columns = columns
-            self.year = year
-            self.data = self.get_data(year, columns)
-            self.documents = get_submissions(year)
         else:
-            self.columns = columns
             col_to_fetch = list(set(columns) - set(self.data.columns))
             new_data = self.get_data(year, col_to_fetch)
 
-            self.data = pd.merge(self.data, new_data[['adsh'] + col_to_fetch],
-                                 on='adsh', how='outer')
+            self.data = self.data.join(new_data[columns_and_notes(col_to_fetch)],
+                                       how='outer')
 
-        to_return = pd.merge(
-                            self.documents[['adsh', 'name', 'url']],
-                            self.data[columns_and_notes(self.columns)], 
-                            on='adsh', how='left'
-                            )
+        self.columns = columns
+
+        to_return = self.documents[['name', 'url']].join(
+                     self.data[columns_and_notes(self.columns)],
+                     how='left'
+                    )
 
         unit_ful = list(set(self.columns) - self.ratio_cols)
         to_return[unit_ful] = to_return[unit_ful] / self.units[unit]
@@ -78,4 +77,10 @@ class DataBuffer(object):
         return display_columns
 
     def get_data(self, year, columns):
-        return get_balance_sheet_data(year, columns)
+        data = pd.DataFrame(index=self.documents.index)
+        for data_fetcher in [get_balance_sheet_data, get_cash_flow_data]:
+            new_data = data_fetcher(year, columns)
+            if new_data is not None:
+                data = data.join(new_data)
+
+        return data

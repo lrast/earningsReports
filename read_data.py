@@ -28,7 +28,7 @@ def get_numbers(year, columns):
                              dtype={'value': float, 'adsh': str})
 
     # data processing
-    data, notes_dups = remove_duplicates(data)
+    data, notes_dups = data_processing(data)
 
     pivot_data = data[['adsh', 'tag', 'value']
                       ].pivot_table(index='adsh',
@@ -38,7 +38,8 @@ def get_numbers(year, columns):
 
     notes = pd.DataFrame(index=pivot_data.index,
                          columns=list(map(lambda x: x+'_notes',
-                                          pivot_data.columns))
+                                          pivot_data.columns)),
+                         dtype='string'
                          )
 
     # to do: incorporate notes from duplicate removal
@@ -62,6 +63,7 @@ def get_submissions(year):
     document_data['url'] = original_statement_urls(document_data)
 
     document_data = document_data.drop('instance', axis=1)
+    document_data = document_data.set_index('adsh')
     return document_data
 
 
@@ -77,7 +79,7 @@ def get_years():
     return all_years
 
 
-def remove_duplicates(numerical_data):
+def data_processing(numerical_data):
     """ remove duplicates """
     duplicate_ind = numerical_data.duplicated(['adsh', 'tag'], keep=False)
 

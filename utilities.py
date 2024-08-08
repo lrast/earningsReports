@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 # utilities for columns with notes
 def columns_and_notes(columns):
     """ Columns and their corresponding notes """
@@ -10,8 +13,14 @@ def columns_and_notes(columns):
 
 def make_notes_from_parents(data, colDependencies):
     """ Accumulate note attached to parent columns """
+    notes_df = pd.DataFrame(index=data.index,
+                            columns=[f'{name}_notes' for name in colDependencies.keys()],
+                            dtype='string'
+                            )
+
+    data = data.join(notes_df)
+
     for name, dependencies in colDependencies.items():
-        data[f'{name}_notes'] = None
         for col in dependencies:
             data[f'{name}_notes'].fillna(f'{col}_notes')
 
