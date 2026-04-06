@@ -11,5 +11,4 @@ st.title("Browser view of Rich documents")
 company = Company("AAPL")
 financials = company.get_financials()
 
-render_rich(financials.balance_sheet())
-
+_ = render_rich(financials.cashflow_statement())

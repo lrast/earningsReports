@@ -8,7 +8,6 @@ def render_rich(rich_object):
     Renders any Rich object (Table, Panel, Text, etc.) into Streamlit.
     """
     # 1. Create a console that records its output
-    # force_terminal=True ensures colors are generated
     console = Console(record=True, width=100)
     
     # 2. Print the object to this invisible console
