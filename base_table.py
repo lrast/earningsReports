@@ -5,11 +5,40 @@ from components import ColumnControls
 
 st.set_page_config(layout="wide")
 
+st.markdown(
+    """
+<style>
+  :root {
+    --pinnedSidebarWidth: clamp(300px, 22vw, 460px);
+    --pinnedSidebarGap: 1.5rem;
+  }
+
+  div.block-container {
+    padding-right: calc(var(--pinnedSidebarWidth) + var(--pinnedSidebarGap)) !important;
+  }
+
+  div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+    position: fixed !important;
+    top: 3.5rem !important;
+    bottom: 1rem !important;
+    right: var(--pinnedSidebarGap) !important;
+    width: var(--pinnedSidebarWidth) !important;
+    z-index: 998 !important;
+    background: var(--background-color) !important;
+    overflow-y: auto !important;
+    padding-bottom: 2rem !important;
+    padding-left: 2rem !important;
+  }
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
 labels = full_data['label'].unique()
 
-st.title("Base Table")
+st.title("Yearly Financials")
 
 # Main content (80%) | Right sidebar (20%)
 main_col, sidebar_col = st.columns([0.8, 0.2])
@@ -28,10 +57,6 @@ with main_col:
                              )
 
     column_controls = {col: ColumnControls(col) for col in columns}
-
-    # Add a selector to allow selecting column units
-    # TODO: make these controls actually change something!
-    selected_unit = st.selectbox("Units", ["1", "10³", "10⁶",  "10⁹"], key="units_selected")
 
     full_data = full_data.filter(pl.col('label').is_in(columns))
 
@@ -57,5 +82,8 @@ with main_col:
     st.dataframe(
         to_show, 
         width='stretch',
-        hide_index=True
+        height=600,
+        hide_index=True,
+        column_config={k: v.get_column_formatting()
+                       for k, v in column_controls.items()}
     )
