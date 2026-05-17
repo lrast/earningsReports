@@ -1,10 +1,7 @@
 import streamlit as st
-from renderers import render_rich
 from edgar import get_filings, set_identity, Company
 
-
-
-st.set_page_config(layout="wide")
+from utilities.renderers import render_rich
 
 set_identity("Your Name yourname@domain.com")
 

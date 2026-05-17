@@ -19,3 +19,7 @@ Objectives for AI / search component of this application:
 
 ## Rejected:
 No ag-grid. It's massively slower than the streamlit builtin (due to JSON vs arrow encodings, I guess)
+
+## Run
+
+`streamlit run app/Home.py`

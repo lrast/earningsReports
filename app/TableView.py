@@ -1,9 +1,7 @@
 import streamlit as st
 import polars as pl
 
-from components import ColumnControls
-
-st.set_page_config(layout="wide")
+from utilities.components import ColumnControls
 
 st.markdown(
     """
