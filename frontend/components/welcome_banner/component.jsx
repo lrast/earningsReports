@@ -1,3 +1,5 @@
+import { createRoot } from "react-dom/client";
+
 const props = window.__STREAMLIT_PROPS__ || {};
 
 function WelcomeBanner() {
@@ -16,7 +18,14 @@ function WelcomeBanner() {
       <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.35rem", fontWeight: 600 }}>
         {title}
       </h2>
-      <p style={{ margin: "0 0 1rem", opacity: 0.85, lineHeight: 1.5, fontSize: "0.95rem" }}>
+      <p
+        style={{
+          margin: "0 0 1rem",
+          opacity: 0.85,
+          lineHeight: 1.5,
+          fontSize: "0.95rem",
+        }}
+      >
         {subtitle}
       </p>
       {features.length > 0 && (
@@ -38,5 +47,5 @@ function WelcomeBanner() {
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
+const root = createRoot(document.getElementById("root"));
 root.render(<WelcomeBanner />);

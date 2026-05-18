@@ -28,7 +28,7 @@ Choose a view from the sidebar, or use the links below.
             "features": [
                 "Pivot and filter sheet data by year and line items",
                 "Rich-rendered cash flow and filing documents",
-                "React components live under frontend/components/",
+                "React components are built from frontend/ into app/static/dist/",
             ],
         },
     )

@@ -1,4 +1,4 @@
-"""Load and render front-end components from the project ``frontend/`` directory."""
+"""Load and render front-end components built into ``app/static/dist``."""
 
 from __future__ import annotations
 
@@ -7,14 +7,8 @@ from pathlib import Path
 
 import streamlit.components.v1 as components
 
-FRONTEND_ROOT = Path(__file__).resolve().parents[2] / "frontend"
-COMPONENTS_DIR = FRONTEND_ROOT / "components"
-
-REACT_CDN = "https://unpkg.com/react@18/umd/react.production.min.js"
-REACT_DOM_CDN = "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
-BABEL_CDN = "https://unpkg.com/@babel/standalone/babel.min.js"
-
-_COMPONENT_FILENAMES = ("component.mjs", "component.jsx", "component.js")
+DIST_ROOT = Path(__file__).resolve().parent.parent / "static" / "dist"
+_COMPONENT_FILENAMES = ("component.js",)
 _BASE_STYLES = """
     body {
       margin: 0;
@@ -29,20 +23,7 @@ _BASE_STYLES = """
 
 
 def _component_dir(name: str) -> Path:
-    return COMPONENTS_DIR / name
-
-
-def list_components() -> list[str]:
-    """Return names of components that have a recognized source file."""
-    if not COMPONENTS_DIR.is_dir():
-        return []
-    names = []
-    for path in sorted(COMPONENTS_DIR.iterdir()):
-        if not path.is_dir():
-            continue
-        if any((path / filename).exists() for filename in _COMPONENT_FILENAMES):
-            names.append(path.name)
-    return names
+    return DIST_ROOT / name
 
 
 def _component_script_path(name: str) -> Path:
@@ -52,8 +33,9 @@ def _component_script_path(name: str) -> Path:
         if path.exists():
             return path
     raise FileNotFoundError(
-        f"No component source in {base.relative_to(FRONTEND_ROOT.parent)} "
-        f"(expected one of: {', '.join(_COMPONENT_FILENAMES)})"
+        f"No built component in {base.relative_to(DIST_ROOT.parent.parent)} "
+        f"(expected one of: {', '.join(_COMPONENT_FILENAMES)}). "
+        "Run `npm run build` from the `frontend/` directory."
     )
 
 
@@ -64,12 +46,7 @@ def _component_styles(name: str) -> str:
     return ""
 
 
-def load_component_source(name: str) -> str:
-    """Read the source for a named component."""
-    return _component_script_path(name).read_text(encoding="utf-8")
-
-
-def _build_babel_component_html(name: str, script: str, props_json: str) -> str:
+def _build_component_html(name: str, script: str, props_json: str) -> str:
     extra_styles = _component_styles(name)
     return f"""<!DOCTYPE html>
 <html>
@@ -81,44 +58,11 @@ def _build_babel_component_html(name: str, script: str, props_json: str) -> str:
 <body>
   <div id="root"></div>
   <script>window.__STREAMLIT_PROPS__ = {props_json};</script>
-  <script crossorigin src="{REACT_CDN}"></script>
-  <script crossorigin src="{REACT_DOM_CDN}"></script>
-  <script crossorigin src="{BABEL_CDN}"></script>
-  <script type="text/babel">
+  <script>
 {script}
   </script>
 </body>
 </html>"""
-
-
-def _build_esm_component_html(name: str, script: str, props_json: str) -> str:
-    extra_styles = _component_styles(name)
-    return f"""<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <style>{_BASE_STYLES}</style>
-  {extra_styles}
-</head>
-<body>
-  <div id="root"></div>
-  <script>window.__STREAMLIT_PROPS__ = {props_json};</script>
-  <script type="module">
-{script}
-  </script>
-</body>
-</html>"""
-
-
-def build_component_html(name: str, *, props: dict | None = None) -> str:
-    """Assemble a self-contained HTML document that mounts the component."""
-    script_path = _component_script_path(name)
-    script = script_path.read_text(encoding="utf-8")
-    props_json = json.dumps(props or {})
-
-    if script_path.suffix == ".mjs":
-        return _build_esm_component_html(name, script, props_json)
-    return _build_babel_component_html(name, script, props_json)
 
 
 def render_frontend_component(
@@ -128,5 +72,7 @@ def render_frontend_component(
     props: dict | None = None,
 ) -> None:
     """Render a named front-end component via ``st.components.v1.html``."""
-    html = build_component_html(name, props=props)
+    script = _component_script_path(name).read_text(encoding="utf-8")
+    props_json = json.dumps(props or {})
+    html = _build_component_html(name, script, props_json)
     components.html(html, height=height)
