@@ -2,35 +2,9 @@ import streamlit as st
 import polars as pl
 
 from utilities.components import ColumnControls
+from utilities.template import init_page
 
-st.markdown(
-    """
-<style>
-  :root {
-    --pinnedSidebarWidth: clamp(300px, 22vw, 460px);
-    --pinnedSidebarGap: 1.5rem;
-  }
-
-  div.block-container {
-    padding-right: calc(var(--pinnedSidebarWidth) + var(--pinnedSidebarGap)) !important;
-  }
-
-  div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
-    position: fixed !important;
-    top: 3.5rem !important;
-    bottom: 1rem !important;
-    right: var(--pinnedSidebarGap) !important;
-    width: var(--pinnedSidebarWidth) !important;
-    z-index: 998 !important;
-    background: var(--background-color) !important;
-    overflow-y: auto !important;
-    padding-bottom: 2rem !important;
-    padding-left: 2rem !important;
-  }
-</style>
-""",
-    unsafe_allow_html=True,
-)
+init_page(__file__, pinned_right_sidebar=True)
 
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
@@ -78,7 +52,7 @@ with main_col:
         to_show = to_show.filter(settings.get_filter_expression())
 
     st.dataframe(
-        to_show, 
+        to_show,
         width='stretch',
         height=600,
         hide_index=True,

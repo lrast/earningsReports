@@ -1,9 +1,9 @@
 import streamlit as st
 
-st.set_page_config(
-    page_title="Corporate Earnings",
-    layout="wide",
-)
+from utilities.frontend import render_frontend_component
+from utilities.template import init_page, run_navigation
+
+init_page()
 
 
 def home():
@@ -14,6 +14,23 @@ Data interface for exploring earnings report filings and financial tables.
 
 Choose a view from the sidebar, or use the links below.
 """
+    )
+
+    render_frontend_component(
+        "welcome_banner",
+        height=220,
+        props={
+            "title": "Explore SEC filings & financial tables",
+            "subtitle": (
+                "Browse yearly financials, rich-rendered Edgar documents, "
+                "and experimental views from one place."
+            ),
+            "features": [
+                "Pivot and filter sheet data by year and line items",
+                "Rich-rendered cash flow and filing documents",
+                "React components live under frontend/components/",
+            ],
+        },
     )
 
     st.subheader("Views")
@@ -32,12 +49,4 @@ Choose a view from the sidebar, or use the links below.
         st.caption("Rich-rendered cash flow statement from company financials.")
 
 
-pg = st.navigation(
-    [
-        st.Page(home, title="Home", icon="🏠", default=True),
-        st.Page("TableView.py", title="Yearly Financials", icon="📊"),
-        st.Page("general_doc_view.py", title="General Doc View", icon="📄"),
-        st.Page("test_doc_view.py", title="Test Doc View", icon="🧪"),
-    ]
-)
-pg.run()
+run_navigation(home=home)
