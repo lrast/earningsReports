@@ -61,12 +61,12 @@ def setup_command_palette() -> None:
     _init_session_state()
 
     hotkeys.activate([
-        hotkeys.hk("palette", "k", meta=True),
-        hotkeys.hk("palette", "k", ctrl=True),
+        hotkeys.hk("palette", "k", meta=True, prevent_default=True),
+        hotkeys.hk("palette", "k", ctrl=True, prevent_default=True),
     ])
 
     if hotkeys.pressed("palette"):
-        st.session_state[_SESSION_OPEN_KEY] = True
+        st.session_state[_SESSION_OPEN_KEY] = not st.session_state[_SESSION_OPEN_KEY]
 
     if st.session_state[_SESSION_OPEN_KEY]:
         _show_command_palette()
