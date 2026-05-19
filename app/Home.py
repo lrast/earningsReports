@@ -1,6 +1,6 @@
 import streamlit as st
 
-from utilities.template import init_page, run_navigation
+from PageTemplate import init_page, run_navigation
 
 init_page()
 

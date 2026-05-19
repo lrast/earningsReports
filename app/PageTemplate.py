@@ -6,9 +6,9 @@ from pathlib import Path
 
 import streamlit as st
 
-from utilities.command_palette import setup_command_palette
+from components.command_palette import setup_command_palette
 
-APP_DIR = Path(__file__).resolve().parent.parent
+APP_DIR = Path(__file__).resolve().parent
 APP_TITLE = "Corporate Earnings"
 PAGE_ICON = "📈"
 
@@ -78,43 +78,6 @@ PINNED_RIGHT_SIDEBAR_CSS = """
 _SESSION_CONFIG_KEY = "_app_template_configured"
 
 
-def _is_entry_script(script_path: Path) -> bool:
-    try:
-        from streamlit.runtime.scriptrunner import get_script_run_ctx
-
-        ctx = get_script_run_ctx()
-        if ctx is None or ctx.main_script_path is None:
-            return False
-        return Path(ctx.main_script_path).resolve() == script_path.resolve()
-    except Exception:
-        return False
-
-
-def _ensure_page_config() -> None:
-    if st.session_state.get(_SESSION_CONFIG_KEY):
-        return
-    st.set_page_config(
-        page_title=APP_TITLE,
-        page_icon=PAGE_ICON,
-        layout="wide",
-        initial_sidebar_state="expanded",
-    )
-    st.session_state[_SESSION_CONFIG_KEY] = True
-
-
-def _inject_global_css() -> None:
-    st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
-
-
-def _render_sidebar_branding() -> None:
-    if st.session_state.get("_app_sidebar_branding"):
-        return
-    with st.sidebar:
-        st.markdown(f"### {APP_TITLE}")
-        st.caption("SEC filings & financial tables")
-    st.session_state["_app_sidebar_branding"] = True
-
-
 def build_navigation(home=None):
     """Build ``st.navigation`` from :data:`NAV_ITEMS`."""
     pages = []
@@ -174,3 +137,38 @@ def init_page(
         run_navigation()
 
 
+def _is_entry_script(script_path: Path) -> bool:
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        ctx = get_script_run_ctx()
+        if ctx is None or ctx.main_script_path is None:
+            return False
+        return Path(ctx.main_script_path).resolve() == script_path.resolve()
+    except Exception:
+        return False
+
+
+def _ensure_page_config() -> None:
+    if st.session_state.get(_SESSION_CONFIG_KEY):
+        return
+    st.set_page_config(
+        page_title=APP_TITLE,
+        page_icon=PAGE_ICON,
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
+    st.session_state[_SESSION_CONFIG_KEY] = True
+
+
+def _inject_global_css() -> None:
+    st.markdown(GLOBAL_CSS, unsafe_allow_html=True)
+
+
+def _render_sidebar_branding() -> None:
+    if st.session_state.get("_app_sidebar_branding"):
+        return
+    with st.sidebar:
+        st.markdown(f"### {APP_TITLE}")
+        st.caption("SEC filings & financial tables")
+    st.session_state["_app_sidebar_branding"] = True

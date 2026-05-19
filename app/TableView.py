@@ -1,8 +1,8 @@
 import streamlit as st
 import polars as pl
 
-from utilities.components import ColumnControls
-from utilities.template import init_page
+from components.controls import ColumnControls
+from PageTemplate import init_page
 
 init_page(__file__, pinned_right_sidebar=True)
 
