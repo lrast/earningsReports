@@ -18,7 +18,7 @@ Choose a view from the sidebar, or use the links below.
 
     render_frontend_component(
         "welcome_banner",
-        height=220,
+        height=320,
         props={
             "title": "Explore SEC filings & financial tables",
             "subtitle": (

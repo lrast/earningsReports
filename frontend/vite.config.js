@@ -33,6 +33,11 @@ function discoverComponentEntries() {
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      experiments: resolve(__dirname, "../experiments"),
+    },
+  },
   build: {
     outDir: DIST_DIR,
     emptyOutDir: true,

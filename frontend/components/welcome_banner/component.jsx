@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { MyApp } from "experiments/app.tsx";
 
 const props = window.__STREAMLIT_PROPS__ || {};
 
@@ -6,6 +7,7 @@ function WelcomeBanner() {
   const { title, subtitle, features = [] } = props;
 
   return (
+    <>
     <div
       style={{
         padding: "1.25rem 1.5rem",
@@ -44,6 +46,8 @@ function WelcomeBanner() {
         </ul>
       )}
     </div>
+    <MyApp />
+    </>
   );
 }
 
