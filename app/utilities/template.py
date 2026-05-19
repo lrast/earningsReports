@@ -6,6 +6,8 @@ from pathlib import Path
 
 import streamlit as st
 
+from utilities.command_palette import setup_command_palette
+
 APP_DIR = Path(__file__).resolve().parent.parent
 APP_TITLE = "Corporate Earnings"
 PAGE_ICON = "📈"
@@ -141,6 +143,7 @@ def build_navigation(home=None):
 
 def run_navigation(home=None) -> None:
     """Run the app navigation sidebar (call from the entrypoint page)."""
+    setup_command_palette()
     build_navigation(home=home).run()
 
 
@@ -169,3 +172,5 @@ def init_page(
     script_path = Path(caller_file).resolve()
     if _is_entry_script(script_path) and script_path.name != "Home.py":
         run_navigation()
+
+
