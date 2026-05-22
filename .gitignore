@@ -1,4 +1,6 @@
 __pycache__/
 .DS_Store
+node_modules/
+frontend/dist/
 .ipynb_checkpoints/
 *.parquet

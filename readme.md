@@ -22,3 +22,14 @@ No ag-grid. It's massively slower than the streamlit builtin (due to JSON vs arr
 ## Run
 
 `streamlit run app/Home.py`
+
+### Frontend (Vite)
+
+JavaScript for the Streamlit app is authored under `frontend/src/` and built into `app/assets/js/`:
+
+```bash
+cd frontend
+npm install
+npm run build    # one-off build
+npm run dev      # rebuild on file changes
+```

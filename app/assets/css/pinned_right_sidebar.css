@@ -1,0 +1,16 @@
+div.block-container {
+  padding-right: calc(var(--pinnedSidebarWidth) + var(--pinnedSidebarGap)) !important;
+}
+
+div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+  position: fixed !important;
+  top: 3.5rem !important;
+  bottom: 1rem !important;
+  right: var(--pinnedSidebarGap) !important;
+  width: var(--pinnedSidebarWidth) !important;
+  z-index: 998 !important;
+  background: var(--background-color) !important;
+  overflow-y: auto !important;
+  padding-bottom: 2rem !important;
+  padding-left: 2rem !important;
+}

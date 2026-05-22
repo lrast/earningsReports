@@ -1,0 +1,13 @@
+:root {
+  --pinnedSidebarWidth: clamp(300px, 22vw, 460px);
+  --pinnedSidebarGap: 1.5rem;
+}
+
+div.block-container {
+  padding-top: 2rem;
+  max-width: 100%;
+}
+
+[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
+  padding-top: 0.25rem;
+}
