@@ -4,7 +4,7 @@ from edgar import get_filings, set_identity, Company
 from utilities.renderers import render_rich
 from PageTemplate import init_page
 
-init_page(__file__)
+init_page()
 
 set_identity("Your Name yourname@domain.com")
 

@@ -4,7 +4,7 @@ import polars as pl
 from components.controls import ColumnControls
 from PageTemplate import init_page
 
-init_page(__file__, pinned_right_sidebar=True)
+init_page()
 
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
