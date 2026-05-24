@@ -2,7 +2,10 @@ import streamlit as st
 
 from pathlib import Path
 
-ASSET_DIR = Path(__file__).resolve().parent.parent / 'assets'
+ASSET_DIR = Path(__file__).resolve().parent.parent / "assets"
+
+
+COMMAND_PALETTE_CSS = "command_palette.css"
 
 
 def load_css(filename: str) -> str:
@@ -16,7 +19,7 @@ def load_js_component(name, filename: str):
     raw_code = (ASSET_DIR / "js" / filename).read_text(encoding="utf-8").strip()
 
     return st.components.v2.component(
-            name,
-            js=raw_code,
-            isolate_styles=False,
-        )
+        name,
+        js=raw_code,
+        isolate_styles=False,
+    )
