@@ -1,8 +1,9 @@
+/* Streamlit dark theme: #0e1117 app, #262730 surfaces, #fafafa text */
 .kbar-overlay {
   position: fixed;
   inset: 0;
   z-index: 999998;
-  background: rgba(14, 17, 23, 0.55);
+  background: rgba(14, 17, 23, 0.72);
 }
 
 .kbar-positioner {
@@ -18,15 +19,15 @@
 .kbar-animator {
   max-width: 600px;
   width: 100%;
-  background: #ffffff;
-  color: #31333f;
+  background: #262730;
+  color: #fafafa;
   border-radius: 10px;
   overflow: hidden;
   opacity: 1 !important;
   transform: none !important;
   box-shadow:
-    0 16px 70px rgba(0, 0, 0, 0.2),
-    0 0 0 1px rgba(49, 51, 63, 0.08);
+    0 16px 70px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(250, 250, 250, 0.08);
 }
 
 .kbar-search {
@@ -36,13 +37,13 @@
   box-sizing: border-box;
   outline: none;
   border: none;
-  border-bottom: 1px solid rgba(49, 51, 63, 0.12);
-  background: #ffffff;
-  color: #31333f;
+  border-bottom: 1px solid rgba(250, 250, 250, 0.1);
+  background: #262730;
+  color: #fafafa;
 }
 
 .kbar-search::placeholder {
-  color: rgba(49, 51, 63, 0.45);
+  color: rgba(250, 250, 250, 0.45);
 }
 
 .kbar-results {
@@ -51,13 +52,22 @@
   padding: 0.35rem 0;
 }
 
+.kbar-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.kbar-results::-webkit-scrollbar-thumb {
+  background: rgba(250, 250, 250, 0.15);
+  border-radius: 4px;
+}
+
 .kbar-group-label {
   padding: 8px 16px 4px;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(49, 51, 63, 0.5);
+  color: rgba(250, 250, 250, 0.5);
 }
 
 .kbar-result {
@@ -71,7 +81,7 @@
 }
 
 .kbar-result[data-active="true"] {
-  background: rgba(255, 75, 75, 0.08);
+  background: rgba(255, 75, 75, 0.18);
 }
 
 .kbar-result-icon {
@@ -96,14 +106,14 @@
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: rgba(49, 51, 63, 0.08);
-  color: rgba(49, 51, 63, 0.75);
-  border: 1px solid rgba(49, 51, 63, 0.12);
+  background: rgba(250, 250, 250, 0.08);
+  color: rgba(250, 250, 250, 0.75);
+  border: 1px solid rgba(250, 250, 250, 0.12);
 }
 
 .kbar-result--info {
   cursor: default;
-  color: rgba(49, 51, 63, 0.75);
+  color: rgba(250, 250, 250, 0.65);
 }
 
 .kbar-result--info[data-active="true"] {

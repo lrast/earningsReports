@@ -2,9 +2,6 @@ import streamlit as st
 import polars as pl
 
 from components.controls import ColumnControls
-from PageTemplate import init_page
-
-init_page()
 
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
