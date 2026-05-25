@@ -1,5 +1,5 @@
 /**
- * Global command palette for Streamlit (mounted via PageTemplate).
+ * Global command palette for Streamlit (mounted via components/command_palette.py).
  * Must export a default function — required by st.components.v2.component.
  */
 
