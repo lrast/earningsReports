@@ -43,37 +43,39 @@ function buildActions(getComponent) {
       perform: toggleStreamlitSidebar,
     },
     {
-      id: "keyboard-shortcuts",
-      name: "Keyboard shortcuts",
+      id: "ks-open",
+      name: "Open command palette — ⌘K / Ctrl+K",
       section: "Help",
-      keywords: "help hotkeys keys",
-      children: [
-        {
-          id: "ks-open",
-          name: "Open command palette — ⌘K / Ctrl+K",
-          perform: () => {},
-        },
-        {
-          id: "ks-nav",
-          name: "Move selection — ↑ / ↓",
-          perform: () => {},
-        },
-        {
-          id: "ks-select",
-          name: "Run action — Enter",
-          perform: () => {},
-        },
-        {
-          id: "ks-back",
-          name: "Go back — Backspace",
-          perform: () => {},
-        },
-        {
-          id: "ks-close",
-          name: "Close palette — Esc",
-          perform: () => {},
-        },
-      ],
+      keywords: "help hotkeys keys open palette",
+      perform: () => {},
+    },
+    {
+      id: "ks-nav",
+      name: "Move selection — ↑ / ↓",
+      section: "Help",
+      keywords: "help hotkeys keys navigate arrows",
+      perform: () => {},
+    },
+    {
+      id: "ks-select",
+      name: "Run action — Enter",
+      section: "Help",
+      keywords: "help hotkeys keys enter select",
+      perform: () => {},
+    },
+    {
+      id: "ks-back",
+      name: "Go back — Backspace",
+      section: "Help",
+      keywords: "help hotkeys keys back backspace",
+      perform: () => {},
+    },
+    {
+      id: "ks-close",
+      name: "Close palette — Esc",
+      section: "Help",
+      keywords: "help hotkeys keys escape close",
+      perform: () => {},
     },
   ];
 }

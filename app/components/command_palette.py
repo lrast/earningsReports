@@ -9,15 +9,19 @@ import streamlit as st
 from utilities.load_assets import COMMAND_PALETTE_CSS, load_css, load_js_component
 
 COMMAND_PALETTE_KEY = "_app_js_command_palette"
+PENDING_PAGE_KEY = "_command_palette_pending_page"
 _JS_COMPONENTS: dict[str, st.components.v2.types.ComponentRenderer] = {}
 
 
 def mount_command_palette(
     nav_items: list[dict],
+    page_by_file: dict[str, st.Page],
     *,
     on_change: Callable[[], None] | None = None,
 ):
     """Load palette styles, mount the JS component, and handle navigation."""
+    _consume_pending_page_switch(page_by_file)
+
     st.markdown(load_css(COMMAND_PALETTE_CSS), unsafe_allow_html=True)
 
     key = COMMAND_PALETTE_KEY
@@ -38,9 +42,8 @@ def mount_command_palette(
     def _handle_palette_change() -> None:
         state = st.session_state.get(key, {})
         target = state.get("value")
-        print(target)
-        if target:
-            st.switch_page("app/" + str(target))
+        if target and target in page_by_file:
+            st.session_state[PENDING_PAGE_KEY] = target
         if on_change is not None:
             on_change()
 
@@ -51,3 +54,12 @@ def mount_command_palette(
         height=0,
         on_value_change=_handle_palette_change,
     )
+
+
+def _consume_pending_page_switch(
+    page_by_file: dict[str, st.Page],
+) -> None:
+    """Run deferred navigation outside widget callbacks (switch_page reruns)."""
+    pending = st.session_state.pop(PENDING_PAGE_KEY, None)
+    if pending and pending in page_by_file:
+        st.switch_page(page_by_file[pending])
