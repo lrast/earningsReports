@@ -6,6 +6,7 @@ import {
   KBarProvider,
   KBarResults,
   KBarSearch,
+  useKBar,
   useMatches,
   useRegisterActions,
 } from "kbar";
@@ -19,22 +20,33 @@ function toggleStreamlitSidebar() {
 }
 
 function buildActions(getComponent) {
-  const navItems = getComponent()?.data?.navItems ?? [];
-  const navigate = (file) => {
-    getComponent()?.setStateValue?.("value", file);
+  const commands = getComponent()?.data?.commands ?? [];
+  const runCommand = (id) => {
+    getComponent()?.setStateValue?.("value", id);
   };
 
-  const navActions = navItems.map((item) => ({
-    id: `nav-${item.file}`,
-    name: item.title,
-    section: "Navigation",
-    keywords: `${item.title} ${item.file} page`,
-    icon: <span className="kbar-result-icon">{item.icon}</span>,
-    perform: () => navigate(item.file),
-  }));
+  const commandActions = commands.flatMap((cmd) => {
+    const parent = {
+      id: cmd.id,
+      name: cmd.name,
+      section: cmd.section ?? "Commands",
+      keywords: `${cmd.name} ${cmd.id}`,
+      icon: <span className="kbar-result-icon">{cmd.icon}</span>,
+    };
+
+    const children = (cmd.options ?? []).map((opt) => ({
+      id: opt.id,
+      name: opt.name,
+      parent: cmd.id,
+      keywords: `${cmd.name} ${opt.name} ${opt.id}`,
+      perform: () => runCommand(opt.id),
+    }));
+
+    return [parent, ...children];
+  });
 
   return [
-    ...navActions,
+    ...commandActions,
     {
       id: "toggle-sidebar",
       name: "Toggle sidebar",
@@ -121,12 +133,22 @@ function RenderResults() {
 }
 
 function CommandBar() {
+  // useKBar merges collector output with { query, options }; collect an object so
+  // currentRootActionId is a real string for the key below (not "[object Object]").
+  const { currentRootActionId } = useKBar((state) => ({
+    currentRootActionId: state.currentRootActionId,
+  }));
+
   return (
     <KBarPortal>
       <div className="kbar-overlay" />
       <KBarPositioner className="kbar-positioner">
         <KBarAnimator className="kbar-animator">
-          <KBarSearch className="kbar-search" placeholder="Search commands…" />
+          <KBarSearch
+            key={currentRootActionId ?? "root"}
+            className="kbar-search"
+            placeholder="Search commands…"
+          />
           <div className="kbar-results">
             <RenderResults />
           </div>

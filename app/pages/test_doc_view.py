@@ -3,8 +3,6 @@ from edgar import get_filings, set_identity, Company
 
 from utilities.renderers import render_rich
 
-st.session_state["_app_current_page_file"] = "pages/test_doc_view.py"
-
 set_identity("Your Name yourname@domain.com")
 
 st.title("Browser view of Rich documents")

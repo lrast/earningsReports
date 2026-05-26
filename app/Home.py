@@ -7,7 +7,10 @@ from pathlib import Path
 
 import streamlit as st
 
-from components.command_palette import mount_command_palette
+from components.command_palette import (
+    SELECTED_COMMAND_KEY,
+    mount_command_palette,
+)
 from utilities.load_assets import load_css
 from pages.statement_page import document_template
 
@@ -22,7 +25,6 @@ NAV_ITEMS: list[dict] = [
 
 
 def home() -> None:
-    st.session_state["_app_current_page_file"] = "Home.py"
     st.title("Corporate Earnings Explorer")
     st.markdown(
         """
@@ -105,11 +107,20 @@ if not st.session_state.get("session_configured"):
 
 st.markdown(load_css("global.css"), unsafe_allow_html=True)
 
-pages, page_by_file = build_pages()
+pages, _page_by_file = build_pages()
 
-mount_command_palette(NAV_ITEMS, page_by_file)
+mount_command_palette()
 
 # custom sidebar elements
+with st.sidebar:
+    selected = st.session_state.get(SELECTED_COMMAND_KEY)
+    if selected:
+        st.caption("Last command")
+        st.write(selected)
+    else:
+        st.caption("Last command")
+        st.write("—")
+
 
 # button styling
 st.html(
