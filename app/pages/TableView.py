@@ -3,6 +3,8 @@ import polars as pl
 
 from components.controls import ColumnControls
 
+st.session_state["_app_current_page_file"] = "pages/TableView.py"
+
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
 labels = full_data['label'].unique()

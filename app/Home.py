@@ -22,6 +22,7 @@ NAV_ITEMS: list[dict] = [
 
 
 def home() -> None:
+    st.session_state["_app_current_page_file"] = "Home.py"
     st.title("Corporate Earnings Explorer")
     st.markdown(
         """
