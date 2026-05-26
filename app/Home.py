@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import streamlit as st
 
 from components.command_palette import mount_command_palette
 from utilities.load_assets import load_css
+from pages.statement_page import document_template
 
 APP_DIR = Path(__file__).resolve().parent
 
@@ -44,6 +46,16 @@ Choose a view from the sidebar, or use the links below.
         st.page_link("pages/test_doc_view.py", label="Test Doc View", icon="🧪")
         st.caption("Rich-rendered cash flow statement from company financials.")
 
+    new_page_name = st.text_input("Enter Page Name:")
+    if add_view and new_page_name:
+        cleaned_name = new_page_name.strip()
+        if cleaned_name and cleaned_name not in st.session_state.dynamic_pages:
+            st.session_state.dynamic_pages.append(cleaned_name)
+            st.success(f"Page '{cleaned_name}' created!")
+            st.rerun()
+        elif cleaned_name in st.session_state.dynamic_pages:
+            st.warning("That page already exists.")
+
 
 def build_pages() -> tuple[list[st.Page], dict[str, st.Page]]:
     pages: list[st.Page] = []
@@ -68,7 +80,19 @@ def build_pages() -> tuple[list[st.Page], dict[str, st.Page]]:
     return pages, page_by_file
 
 
-# Run the page
+def _dynamic_page_url_path(name: str, used: set[str]) -> str:
+    """Unique url_path for a user-created page (avoids shared callable name 'render')."""
+    base = re.sub(r"[^a-zA-Z0-9_-]+", "_", name.strip().lower()).strip("_") or "dynamic_page"
+    candidate = base
+    suffix = 2
+    while candidate in used:
+        candidate = f"{base}_{suffix}"
+        suffix += 1
+    used.add(candidate)
+    return candidate
+
+
+# Run the global parts of the page
 if not st.session_state.get("session_configured"):
     st.set_page_config(
         page_title="Corporate Earnings",
@@ -83,5 +107,42 @@ st.markdown(load_css("global.css"), unsafe_allow_html=True)
 pages, page_by_file = build_pages()
 
 mount_command_palette(NAV_ITEMS, page_by_file)
+
+# custom sidebar elements
+
+# button styling
+st.html(
+    """
+    <style>
+    /* Target the specific container key and force it to the bottom */
+    .st-key-sidebar_bottom {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        width: 100%;
+        padding: 0 1rem; /* matches standard sidebar padding */
+    }
+    </style>
+    """
+)
+
+with st.sidebar.container(key="sidebar_bottom"):
+    st.divider()
+    add_view = st.button("",  icon="➕", use_container_width=True)
+
+
+# Initialize session state to track user-created pages
+if "dynamic_pages" not in st.session_state:
+    st.session_state.dynamic_pages = []
+
+
+# Dynamically append pages from session state
+_used_url_paths = {p.url_path for p in pages if p.url_path}
+for page_name in st.session_state.dynamic_pages:
+    page_fn = document_template(page_name)
+    url_path = _dynamic_page_url_path(page_name, _used_url_paths)
+    pages.append(
+        st.Page(page_fn, title=page_name, icon="📄", url_path=url_path)
+    )
 
 st.navigation(pages).run()
