@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, renameSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, renameSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
@@ -24,8 +24,24 @@ function movePaletteCssToAssetsCss() {
   };
 }
 
+/** Copy command JSON beside the built bundle for Python label lookup. */
+function copyCommandPaletteJson() {
+  return {
+    name: "copy-command-palette-json",
+    closeBundle() {
+      const from = resolve(frontendDir, "src/command_palette_commands.json");
+      const to = resolve(assetsJsDir, "command_palette_commands.json");
+      if (!existsSync(from)) {
+        return;
+      }
+      mkdirSync(assetsJsDir, { recursive: true });
+      copyFileSync(from, to);
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), movePaletteCssToAssetsCss()],
+  plugins: [react(), movePaletteCssToAssetsCss(), copyCommandPaletteJson()],
   // React/kbar reference process.env.NODE_ENV; Streamlit runs the bundle in a browser.
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),

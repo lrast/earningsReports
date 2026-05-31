@@ -7,22 +7,17 @@ import { createRoot } from "react-dom/client";
 import CommandPalette from "./CommandPalette.jsx";
 
 let latestComponent = null;
-let mounted = false;
+let root = null;
 
 export default function (component) {
   latestComponent = component;
 
-  if (mounted) {
-    return;
+  if (!root) {
+    const rootEl = document.createElement("div");
+    rootEl.id = "ce-command-palette-root";
+    document.body.appendChild(rootEl);
+    root = createRoot(rootEl);
   }
 
-  mounted = true;
-
-  const rootEl = document.createElement("div");
-  rootEl.id = "ce-command-palette-root";
-  document.body.appendChild(rootEl);
-
-  createRoot(rootEl).render(
-    <CommandPalette getComponent={() => latestComponent} />
-  );
+  root.render(<CommandPalette getComponent={() => latestComponent} />);
 }

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   KBarAnimator,
   KBarPortal,
@@ -10,7 +10,13 @@ import {
   useMatches,
   useRegisterActions,
 } from "kbar";
+import {
+  buildBaseCommands,
+  commandPaletteCommands,
+  getChildren,
+} from "./commandPaletteData.js";
 import "./command-palette.css";
+import OpenAtHandler from "./OpenAtHandler.jsx";
 
 function toggleStreamlitSidebar() {
   const button =
@@ -19,31 +25,57 @@ function toggleStreamlitSidebar() {
   button?.click();
 }
 
-function buildActions(getComponent) {
-  const commands = getComponent()?.data?.commands ?? [];
+function commandToActions(cmd, getComponent, subcommandCache, onLazyNavigate, parentId = null) {
   const runCommand = (id) => {
     getComponent()?.setStateValue?.("value", id);
   };
 
-  const commandActions = commands.flatMap((cmd) => {
-    const parent = {
-      id: cmd.id,
-      name: cmd.name,
-      section: cmd.section ?? "Commands",
-      keywords: `${cmd.name} ${cmd.id}`,
-      icon: <span className="kbar-result-icon">{cmd.icon}</span>,
-    };
+  const options = subcommandCache[cmd.id] ?? [];
+  const isLazy = cmd.lazy && options.length === 0;
+  const isLeaf = !cmd.lazy && options.length === 0;
 
-    const children = (cmd.options ?? []).map((opt) => ({
-      id: opt.id,
-      name: opt.name,
-      parent: cmd.id,
-      keywords: `${cmd.name} ${opt.name} ${opt.id}`,
-      perform: () => runCommand(opt.id),
-    }));
+  const action = {
+    id: cmd.id,
+    name: cmd.name,
+    section: cmd.section ?? "Commands",
+    keywords: `${cmd.name} ${cmd.id}`,
+  };
 
-    return [parent, ...children];
-  });
+  if (parentId) {
+    action.parent = parentId;
+  }
+
+  if (cmd.icon) {
+    action.icon = <span className="kbar-result-icon">{cmd.icon}</span>;
+  }
+
+  if (isLeaf) {
+    action.perform = () => runCommand(cmd.id);
+  } else if (isLazy) {
+    action.perform = () => onLazyNavigate(cmd.id);
+  }
+
+  const actions = [action];
+
+  for (const opt of options) {
+    actions.push(
+      ...commandToActions(
+        opt,
+        getComponent,
+        subcommandCache,
+        onLazyNavigate,
+        cmd.id
+      )
+    );
+  }
+
+  return actions;
+}
+
+function buildActions(commands, subcommandCache, getComponent, onLazyNavigate) {
+  const commandActions = commands.flatMap((cmd) =>
+    commandToActions(cmd, getComponent, subcommandCache, onLazyNavigate)
+  );
 
   return [
     ...commandActions,
@@ -92,8 +124,16 @@ function buildActions(getComponent) {
   ];
 }
 
-function RegisterActions({ getComponent }) {
-  const actions = useMemo(() => buildActions(getComponent), [getComponent]);
+function RegisterActions({
+  commands,
+  subcommandCache,
+  getComponent,
+  onLazyNavigate,
+}) {
+  const actions = useMemo(
+    () => buildActions(commands, subcommandCache, getComponent, onLazyNavigate),
+    [commands, subcommandCache, getComponent, onLazyNavigate]
+  );
   useRegisterActions(actions, [actions]);
   return null;
 }
@@ -133,8 +173,6 @@ function RenderResults() {
 }
 
 function CommandBar() {
-  // useKBar merges collector output with { query, options }; collect an object so
-  // currentRootActionId is a real string for the key below (not "[object Object]").
   const { currentRootActionId } = useKBar((state) => ({
     currentRootActionId: state.currentRootActionId,
   }));
@@ -159,9 +197,28 @@ function CommandBar() {
 }
 
 export default function CommandPalette({ getComponent }) {
+  const commands = useMemo(() => buildBaseCommands(commandPaletteCommands), []);
+  const [subcommandCache, setSubcommandCache] = useState({});
+  const [openAt, setOpenAt] = useState(null);
+
+  const onLazyNavigate = (commandId) => {
+    const children = getChildren(commandId);
+    if (!children.length) {
+      return;
+    }
+    setSubcommandCache((prev) => ({ ...prev, [commandId]: children }));
+    setOpenAt(commandId);
+  };
+
   return (
     <KBarProvider options={{ animations: { enterMs: 0, exitMs: 0 } }}>
-      <RegisterActions getComponent={getComponent} />
+      <RegisterActions
+        commands={commands}
+        subcommandCache={subcommandCache}
+        getComponent={getComponent}
+        onLazyNavigate={onLazyNavigate}
+      />
+      <OpenAtHandler openAt={openAt} onOpened={() => setOpenAt(null)} />
       <CommandBar />
     </KBarProvider>
   );

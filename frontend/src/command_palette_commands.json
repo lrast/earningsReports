@@ -1,0 +1,39 @@
+{
+  "commands": {
+    "refresh-data": {
+      "name": "Refresh data",
+      "icon": "🔄",
+      "section": "Data"
+    },
+    "export-csv": {
+      "name": "Export to CSV",
+      "icon": "📤",
+      "section": "Data"
+    },
+    "toggle-filters": {
+      "name": "Toggle filters",
+      "icon": "🔍",
+      "section": "View"
+    },
+    "reset-layout": {
+      "name": "Reset layout",
+      "icon": "📐",
+      "section": "View"
+    },
+    "open-settings": {
+      "name": "Open settings",
+      "icon": "⚙️",
+      "section": "App"
+    }
+  },
+  "subcommands": [
+    { "slug": "all", "name": "All sources" },
+    { "slug": "filings", "name": "Filings only" },
+    { "slug": "tables", "name": "Tables only" }
+  ],
+  "subsubcommands": [
+    { "slug": "A", "name": "A" },
+    { "slug": "B", "name": "B" },
+    { "slug": "C", "name": "C" }
+  ]
+}
