@@ -33,6 +33,7 @@ Data interface for exploring earnings report filings and financial tables.
 Choose a view from the sidebar, or use the links below.
 """
     )
+    st.info("Use the command palette with **⌘K** (Mac) or **Ctrl+K** (Windows/Linux) to search for particular earnings.")
 
     st.subheader("Views")
     col1, col2, col3 = st.columns(3)
@@ -151,10 +152,10 @@ if "dynamic_pages" not in st.session_state:
 # Dynamically append pages from session state
 _used_url_paths = {p.url_path for p in pages if p.url_path}
 for page_name in st.session_state.dynamic_pages:
-    page_fn = document_template(page_name)
+    page_fn, page_title = document_template(page_name)
     url_path = _dynamic_page_url_path(page_name, _used_url_paths)
     pages.append(
-        st.Page(page_fn, title=page_name, icon="📄", url_path=url_path)
+        st.Page(page_fn, title=page_title, icon="📄", url_path=url_path)
     )
 
 st.navigation(pages).run()

@@ -1,15 +1,91 @@
 """Command palette: styles, JS component, and command selection handling."""
-
 from __future__ import annotations
-
 from collections.abc import Callable
 
 import streamlit as st
+import polars as pl
+
 
 from utilities.load_assets import COMMAND_PALETTE_CSS, load_css, load_js_component
 
 COMMAND_PALETTE_KEY = "_app_js_command_palette"
 SELECTED_COMMAND_KEY = "_command_palette_selected_command"
+
+
+def make_commands_old():
+    """ Process company data to a list of possible commands """
+
+    # Fetch data
+    data = pl.read_parquet('data/sheets.parquet')
+    companies = data['company'].unique().drop_nulls().sort()
+    tickers = data['tickers'].explode().unique().drop_nulls().sort()
+    years = data['year'].unique().drop_nulls().sort(descending=True)
+
+    statements = ['Balance Sheet', 'Cash Flow Statement', 'Income Statement',
+                  'Statement of Equity', 'Comprehensive Income']
+
+    # ticker to company translation
+    pairs = data[['company', 'tickers']].explode('tickers').unique().drop_nulls()
+    ticker_to_company = dict(pairs.group_by('tickers').agg(pl.col("company")).iter_rows())
+
+    command_name = {
+        'Balance Sheet': 'balance',
+        'Cash Flow Statement': 'cash_flow',
+        'Income Statement': 'income',
+        'Statement of Equity': 'equity',
+        'Comprehensive Income': 'comprehensive_income'
+    }
+
+    # making commands:
+    def year_command(year, parent_id):
+        return {"id": parent_id + f'?year={year}', 'name': str(year)}
+
+    def statement_command(statement, parent_id):
+        my_id = parent_id + f'?statement={command_name[statement]}'
+        command = {"id": my_id,
+                   'name': statement,
+                   'options': []}
+        for year in years:
+            command['options'].append(year_command(year, my_id))
+        return command
+
+    def company_command(company, parent_id):
+        my_id = parent_id + f'?company={company}'
+        command = {"id": my_id,
+                   'name': company,
+                   'section': 'Company',
+                   'options': []}
+        for statement in statements:
+            command['options'].append(statement_command(statement, my_id))
+        return command
+
+    def ticker_command(ticker, parent_id):
+        my_id = parent_id + f'?ticker={ticker}'
+        command = {"id": my_id,
+                   'name': ticker,
+                   "section": 'Ticker',
+                   'options': []}
+
+        if len(ticker_to_company[ticker]) == 1:
+            for statement in statements:
+                command['options'].append(statement_command(statement, my_id))
+        else:
+            for company in ticker_to_company[ticker]:
+                command['options'].append(company_command(company, my_id))
+        return command
+
+    return [ticker_command(ticker, '') for ticker in tickers] + \
+           [company_command(company, '') for company in companies]
+
+
+def generate_base_commands():
+    pass
+
+
+def generate_sub_commands(command_id):
+    pass
+
+
 
 DUMMY_COMMANDS: list[dict] = [
     {
@@ -69,6 +145,9 @@ DUMMY_COMMANDS: list[dict] = [
     },
 ]
 
+# commands = make_commands()
+# DUMMY_COMMANDS = commands
+
 
 def _command_labels_by_id() -> dict[str, str]:
     labels: dict[str, str] = {}
@@ -92,6 +171,7 @@ def mount_command_palette(*, on_change: Callable[[], None] | None = None):
         _JS_COMPONENTS["command_palette"] = load_js_component(
             "command_palette", "command_palette.js"
         )
+
 
     component_state = st.session_state.get(key, {})
     selected_id = component_state.get("value")
