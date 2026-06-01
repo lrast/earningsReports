@@ -14,9 +14,18 @@ import {
   buildBaseCommands,
   commandPaletteCommands,
   getChildren,
+  SECTION_PRIORITY,
 } from "./commandPaletteData.js";
 import "./command-palette.css";
 import OpenAtHandler from "./OpenAtHandler.jsx";
+
+function toKbarSection(section = "Commands") {
+  const priority = SECTION_PRIORITY[section];
+  if (priority !== undefined) {
+    return { name: section, priority };
+  }
+  return section;
+}
 
 function toggleStreamlitSidebar() {
   const button =
@@ -34,12 +43,17 @@ function commandToActions(cmd, getComponent, subcommandCache, onLazyNavigate, pa
   const isLazy = cmd.lazy && options.length === 0;
   const isLeaf = !cmd.lazy && options.length === 0;
 
+  const section = cmd.section ?? "Commands";
   const action = {
     id: cmd.id,
     name: cmd.name,
-    section: cmd.section ?? "Commands",
+    section: toKbarSection(section),
     keywords: `${cmd.name} ${cmd.id}`,
   };
+
+  if (cmd.priority != null) {
+    action.priority = cmd.priority;
+  }
 
   if (parentId) {
     action.parent = parentId;
