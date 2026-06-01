@@ -8,11 +8,12 @@ from pathlib import Path
 import streamlit as st
 
 from components.command_palette import (
+    PENDING_NAV_COMMAND_KEY,
     SELECTED_COMMAND_KEY,
     mount_command_palette,
 )
 from utilities.load_assets import load_css
-from pages.statement_page import document_template
+from pages.statement_page import fetch_document_by_url
 
 APP_DIR = Path(__file__).resolve().parent
 
@@ -33,7 +34,7 @@ Data interface for exploring earnings report filings and financial tables.
 Choose a view from the sidebar, or use the links below.
 """
     )
-    st.info("Use the command palette with **⌘K** (Mac) or **Ctrl+K** (Windows/Linux) to search for particular earnings.")
+    st.info("Use the command palette with **⌘K** (Mac) or **Ctrl+K** (Windows/Linux) to search earnings.")
 
     st.subheader("Views")
     col1, col2, col3 = st.columns(3)
@@ -49,16 +50,6 @@ Choose a view from the sidebar, or use the links below.
     with col3:
         st.page_link("pages/test_doc_view.py", label="Test Doc View", icon="🧪")
         st.caption("Rich-rendered cash flow statement from company financials.")
-
-    new_page_name = st.text_input("Enter Page Name:")
-    if add_view and new_page_name:
-        cleaned_name = new_page_name.strip()
-        if cleaned_name and cleaned_name not in st.session_state.dynamic_pages:
-            st.session_state.dynamic_pages.append(cleaned_name)
-            st.success(f"Page '{cleaned_name}' created!")
-            st.rerun()
-        elif cleaned_name in st.session_state.dynamic_pages:
-            st.warning("That page already exists.")
 
 
 def build_pages() -> tuple[list[st.Page], dict[str, st.Page]]:
@@ -141,7 +132,7 @@ st.html(
 
 with st.sidebar.container(key="sidebar_bottom"):
     st.divider()
-    add_view = st.button("",  icon="➕", use_container_width=True)
+    st.button("", icon="➕", use_container_width=True)
 
 
 # Initialize session state to track user-created pages
@@ -151,11 +142,19 @@ if "dynamic_pages" not in st.session_state:
 
 # Dynamically append pages from session state
 _used_url_paths = {p.url_path for p in pages if p.url_path}
-for page_name in st.session_state.dynamic_pages:
-    page_fn, page_title = document_template(page_name)
-    url_path = _dynamic_page_url_path(page_name, _used_url_paths)
-    pages.append(
-        st.Page(page_fn, title=page_title, icon="📄", url_path=url_path)
-    )
+command_pages: dict[str, st.Page] = {}
+for command_id in st.session_state.dynamic_pages:
+    page = fetch_document_by_url(command_id, page_entry=command_id)
+    if page is None:
+        continue
+    page_fn, page_title = page
+    url_path = _dynamic_page_url_path(command_id, _used_url_paths)
+    page_obj = st.Page(page_fn, title=page_title, icon="📄", url_path=url_path)
+    pages.append(page_obj)
+    command_pages[command_id] = page_obj
+
+pending_command = st.session_state.pop(PENDING_NAV_COMMAND_KEY, None)
+if pending_command and pending_command in command_pages:
+    st.switch_page(command_pages[pending_command])
 
 st.navigation(pages).run()
