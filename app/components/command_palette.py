@@ -5,7 +5,7 @@ from collections.abc import Callable
 
 import streamlit as st
 
-from pages.statement_page import fetch_document_by_url
+from pages.statement_page import PALETTE_NAV_REQUESTED_KEY, parse_command_id
 from utilities.load_assets import COMMAND_PALETTE_CSS, load_css, load_js_component
 
 COMMAND_PALETTE_KEY = "_app_js_command_palette"
@@ -15,17 +15,20 @@ PENDING_NAV_COMMAND_KEY = "_command_palette_pending_nav"
 _JS_COMPONENTS: dict[str, st.components.v2.types.ComponentRenderer] = {}
 
 
-def add_dynamic_page_from_command(command_id: str) -> bool:
-    """Register a statement page from a palette leaf command. Returns True if added."""
-    if fetch_document_by_url(command_id) is None:
-        return False
+def add_dynamic_page_from_command(command_id: str) -> str | None:
+    """Register a statement page from a palette leaf command.
+
+    Returns the command_id to navigate to (existing or newly added), or None if invalid.
+    """
+    if parse_command_id(command_id) is None:
+        return None
 
     pages = st.session_state.dynamic_pages
     if command_id in pages:
-        return False
+        return command_id
 
     pages.append(command_id)
-    return True
+    return command_id
 
 
 def mount_command_palette(*, on_change: Callable[[], None] | None = None):
@@ -46,8 +49,11 @@ def mount_command_palette(*, on_change: Callable[[], None] | None = None):
         target_id = state.get("value")
         if target_id:
             st.session_state[SELECTED_COMMAND_KEY] = target_id
-            st.session_state[PENDING_NAV_COMMAND_KEY] = target_id
-            add_dynamic_page_from_command(target_id)
+            nav_id = add_dynamic_page_from_command(target_id)
+            nav_requested = st.session_state.get(PALETTE_NAV_REQUESTED_KEY)
+            if nav_id and nav_id != nav_requested:
+                st.session_state[PENDING_NAV_COMMAND_KEY] = nav_id
+                st.session_state[PALETTE_NAV_REQUESTED_KEY] = nav_id
         if on_change is not None:
             on_change()
 

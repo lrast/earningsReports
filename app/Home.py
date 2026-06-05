@@ -13,15 +13,13 @@ from components.command_palette import (
     mount_command_palette,
 )
 from utilities.load_assets import load_css
-from pages.statement_page import fetch_document_by_url
+from pages.statement_page import build_dynamic_page, filter_command_ids
 
 APP_DIR = Path(__file__).resolve().parent
 
 NAV_ITEMS: list[dict] = [
     {"file": "Home.py", "title": "Home", "icon": "🏠", "default": True},
     {"file": "pages/TableView.py", "title": "Yearly Financials", "icon": "📊"},
-    {"file": "pages/general_doc_view.py", "title": "General Doc View", "icon": "📄"},
-    {"file": "pages/test_doc_view.py", "title": "Test Doc View", "icon": "🧪"},
 ]
 
 
@@ -37,19 +35,8 @@ Choose a view from the sidebar, or use the links below.
     st.info("Use the command palette with **⌘K** (Mac) or **Ctrl+K** (Windows/Linux) to search earnings.")
 
     st.subheader("Views")
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.page_link("pages/TableView.py", label="Yearly Financials", icon="📊")
-        st.caption("Pivot and filter sheet data by year and line items.")
-
-    with col2:
-        st.page_link("pages/general_doc_view.py", label="General Doc View", icon="📄")
-        st.caption("Rich-rendered Edgar documents (e.g. cash flow statements).")
-
-    with col3:
-        st.page_link("pages/test_doc_view.py", label="Test Doc View", icon="🧪")
-        st.caption("Rich-rendered cash flow statement from company financials.")
+    st.page_link("pages/TableView.py", label="Yearly Financials", icon="📊")
+    st.caption("Pivot and filter sheet data by year and line items.")
 
 
 def build_pages() -> tuple[list[st.Page], dict[str, st.Page]]:
@@ -140,11 +127,13 @@ if "dynamic_pages" not in st.session_state:
     st.session_state.dynamic_pages = []
 
 
-# Dynamically append pages from session state
+# Dynamically append pages from session state (drop stale bare-name entries)
+st.session_state.dynamic_pages = filter_command_ids(st.session_state.dynamic_pages)
+
 _used_url_paths = {p.url_path for p in pages if p.url_path}
 command_pages: dict[str, st.Page] = {}
 for command_id in st.session_state.dynamic_pages:
-    page = fetch_document_by_url(command_id, page_entry=command_id)
+    page = build_dynamic_page(command_id)
     if page is None:
         continue
     page_fn, page_title = page
