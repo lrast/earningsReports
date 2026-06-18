@@ -5,7 +5,8 @@ from components.controls import ColumnControls
 
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
-labels = full_data['label'].unique()
+metadata = pl.read_parquet("data/metadata.parquet")
+labels = metadata['label']
 
 st.title("Yearly Financials")
 
@@ -18,11 +19,15 @@ with main_col:
     selected_year = st.selectbox("Select Year", years, index=1)
 
     # selecting the data we need
-    full_data = full_data.filter(pl.col('year') == selected_year)
+    full_data = full_data.filter(pl.col('fiscal_year') == selected_year)
 
     columns = st.multiselect("Select Columns", labels,
-                             default=['Assets', 'Liabilities'],
-                             key="columns_selected"
+                             default=['Assets', 'Liabilities', 'Revenues',
+                                      'Gross Profit', 'Entity Public Float',
+                                      "Stockholders' Equity Attributable to Parent",
+                                      "Cost of Revenue"],
+                             key="columns_selected",
+                             accept_new_options=True
                              )
 
     column_controls = {col: ColumnControls(col) for col in columns}

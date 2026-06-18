@@ -17,8 +17,8 @@ class ColumnControls:
         self.value = None
 
     def render(self, column_values):
-        self.log_scale = st.checkbox("log scale", key=f'log_{self.column_name}',
-                                     value=True)
+        #self.log_scale = st.checkbox("log scale", key=f'log_{self.column_name}',
+        #                             value=True)
 
         if self.log_scale:
             column_values = column_values.filter(pl.col('value') > 0)
