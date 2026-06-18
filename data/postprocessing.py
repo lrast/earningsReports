@@ -40,6 +40,13 @@ def concept_filtering(df, threashold=0.95):
     common_concepts = concept_data.columns[concept_sparsity < threashold]
     df = df[df['concept'].isin(common_concepts)]
 
+    # Make labels for concepts that have none
+    needs_labels = df['label'] == ''
+    df.loc[needs_labels, 'label'] = df.loc[needs_labels, 'concept'
+                                           ].str.split(':').str[1
+                                           ].str.replace(r"([a-z])([A-Z])", r"\1 \2",
+                                                         regex=True)
+
     # also return concepts and labels sorted by frequency
     concept_labels = df[['concept', 'label', 'statement_type']].drop_duplicates()
     sparsity_df = pd.DataFrame(concept_sparsity[concept_sparsity < threashold].sort_values()
