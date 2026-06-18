@@ -5,13 +5,15 @@ import json
 def make_commands_json():
     data = pl.read_parquet('data/sheets.parquet')
 
-    companies = data['company'].unique().drop_nulls().sort()
-    tickers = data['tickers'].explode().unique().drop_nulls().sort()
-    years = data['year'].unique().drop_nulls().sort(descending=True)
-
     # ticker to company translation
-    pairs = data[['company', 'tickers']].explode('tickers').unique().drop_nulls()
+    pairs = data[['company', 'tickers']]
+    pairs = pairs.with_columns(tickers=pl.col('tickers').str.split(','))
+    pairs = pairs.explode('tickers').unique().drop_nulls()
     ticker_to_company = dict(pairs.group_by('tickers').agg(pl.col("company")).iter_rows())
+
+    companies = pairs['company'].unique().drop_nulls().sort()
+    tickers = pairs['tickers'].unique().drop_nulls().sort()
+    years = data['fiscal_year'].unique().drop_nulls().sort(descending=True)
 
     # make the statement_commands
     statement_commands = [
