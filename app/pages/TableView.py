@@ -3,6 +3,10 @@ import polars as pl
 
 from components.controls import ColumnControls
 
+MIN_TABLE_HEIGHT = 600
+# Header + 200px chart + axes/padding/margin between blocks (rounded up).
+SIDEBAR_ITEM_HEIGHT = 250
+
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
 metadata = pl.read_parquet("data/metadata.parquet")
@@ -34,6 +38,8 @@ with main_col:
 
     full_data = full_data.filter(pl.col('label').is_in(columns))
 
+table_height = max(MIN_TABLE_HEIGHT, len(columns) * SIDEBAR_ITEM_HEIGHT)
+
 # Table controls in the sidebar
 with sidebar_col:
     for column in columns:
@@ -56,7 +62,7 @@ with main_col:
     st.dataframe(
         to_show,
         width='stretch',
-        height=600,
+        height=table_height,
         hide_index=True,
         column_config={k: v.get_column_formatting()
                        for k, v in column_controls.items()}

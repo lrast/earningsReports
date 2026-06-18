@@ -1,6 +1,5 @@
 import re
 from collections.abc import Callable
-from datetime import date
 from typing import TypedDict
 
 import streamlit as st
@@ -107,6 +106,9 @@ def load_statement(parsed: ParsedCommand):
         return "Statement not found."
 
     xbrl = filing.xbrl()
+    if xbrl is None:
+        return "Statement not found."
+
     match statement_name:
         case "balance_sheet":
             return xbrl.statements.balance_sheet()
