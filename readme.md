@@ -16,16 +16,13 @@ Objectives for AI / search component of this application:
 3. streamlit - data visualization and manipulation
 
 
-## Rejected:
-No ag-grid. It's massively slower than the streamlit builtin (due to JSON vs arrow encodings, I guess)
-
 ## Run
 
 `streamlit run app/Home.py`
 
 ### Frontend (Vite)
 
-JavaScript for the Streamlit app is authored under `frontend/src/` and built into `app/assets/js/`:
+JavaScript for the Streamlit app is authored in `frontend/src/` and built into `app/assets/js/`:
 
 ```bash
 cd frontend

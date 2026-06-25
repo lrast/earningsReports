@@ -11,3 +11,11 @@ div.block-container {
 [data-testid="stSidebar"] [data-testid="stSidebarNav"] {
   padding-top: 0.25rem;
 }
+
+.st-key-table_filter_sidebar {
+  padding: 0.5rem 0.85rem;
+}
+
+.st-key-table_filter_sidebar [data-testid="stVegaLiteChart"] {
+  margin-bottom: -0.35rem;
+}

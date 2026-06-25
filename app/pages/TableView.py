@@ -5,7 +5,7 @@ from components.controls import ColumnControls
 
 MIN_TABLE_HEIGHT = 600
 # Header + 200px chart + axes/padding/margin between blocks (rounded up).
-SIDEBAR_ITEM_HEIGHT = 250
+SIDEBAR_ITEM_HEIGHT = 225
 
 # data set up
 full_data = pl.read_parquet("data/sheets.parquet")
@@ -41,13 +41,25 @@ with main_col:
 table_height = max(MIN_TABLE_HEIGHT, len(columns) * SIDEBAR_ITEM_HEIGHT)
 
 # Table controls in the sidebar
-with sidebar_col:
-    for column in columns:
-        st.write(f'__{column}__')
-        col_df = full_data.filter(pl.col('label') == column)
+filter_reset_nonce = st.session_state.setdefault("filter_reset_nonce", 0)
 
-        current_settings = column_controls[column]
-        current_settings.render(col_df)
+with sidebar_col:
+    with st.container(key="table_filter_sidebar"):
+        if st.button("Reset filters", use_container_width=True):
+            st.session_state["filter_reset_nonce"] += 1
+            st.rerun()
+
+        for i, column in enumerate(columns):
+            if i > 0:
+                st.divider()
+            st.write(f'__{column}__')
+            col_df = full_data.filter(pl.col('label') == column)
+
+            current_settings = column_controls[column]
+            current_settings.render(
+                col_df,
+                chart_key=f"filter_{column}_{filter_reset_nonce}",
+            )
 
 # Render table
 with main_col:
