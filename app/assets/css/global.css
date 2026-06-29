@@ -12,6 +12,10 @@ div.block-container {
   padding-top: 0.25rem;
 }
 
+[data-testid="stSidebarNavSeparator"] {
+  display: none;
+}
+
 .st-key-table_filter_sidebar {
   padding: 0.5rem 0.85rem;
 }

@@ -1,31 +1,50 @@
-"""Session-scoped registry for user-created dynamic pages."""
+"""Session-scoped container for loaded dynamic pages."""
 
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 import streamlit as st
 
-from pages.statement_page import (
-    build_dynamic_page,
-    filter_command_ids,
-    parse_command_id,
-)
+from utilities.parsed_command import ParsedCommand
 
 
-class PageState:
+@dataclass
+class LoadedPage:
+    parsed: ParsedCommand
+    render_fn: Callable[[], None]
+    title: str
+
+    @property
+    def command_id(self) -> str:
+        return self.parsed["command_id"]
+
+
+class OpenSheets:
+    """State management for fetched statement pages."""
     def __init__(self) -> None:
-        self.command_ids: list[str] = []
+        self.pages: list[LoadedPage] = []
         self.statement_cache: dict[str, object] = {}
+        self.pending_nav: str | None = None
+        self.last_navigated_command_id: str | None = None
 
-    def add(self, command_id: str) -> bool:
-        """Register a command id if valid. Returns True if present or newly added."""
-        if parse_command_id(command_id) is None:
-            return False
-        if command_id in self.command_ids:
+    def has_page(self, command_id: str) -> bool:
+        return any(page.command_id == command_id for page in self.pages)
+
+    def add_page(
+        self,
+        parsed: ParsedCommand,
+        render_fn: Callable[[], None],
+        title: str,
+    ) -> bool:
+        """Register a built page. Returns True if present or newly added."""
+        command_id = parsed["command_id"]
+        if self.has_page(command_id):
             return True
-        self.command_ids.append(command_id)
+        self.pages.append(LoadedPage(parsed=parsed, render_fn=render_fn, title=title))
         return True
 
     def get_statement(self, command_id: str) -> object | None:
@@ -34,72 +53,75 @@ class PageState:
     def set_statement(self, command_id: str, statement: object) -> None:
         self.statement_cache[command_id] = statement
 
+    def request_navigation(self, command_id: str) -> None:
+        """Queue navigation after dynamic pages are registered in st.navigation."""
+        if command_id != self.last_navigated_command_id:
+            self.pending_nav = command_id
+
+    def consume_pending_navigation(self) -> str | None:
+        pending = self.pending_nav
+        self.pending_nav = None
+        return pending
+
     def delete_page(self, command_id: str) -> None:
-        """Remove page id, cached statement, and related nav state."""
-        from pages.statement_page import PALETTE_NAV_REQUESTED_KEY
-
-        if command_id in self.command_ids:
-            self.command_ids.remove(command_id)
+        """Remove page, cached statement, and related nav state."""
+        self.pages = [page for page in self.pages if page.command_id != command_id]
         self.statement_cache.pop(command_id, None)
-        if st.session_state.get(PALETTE_NAV_REQUESTED_KEY) == command_id:
-            st.session_state.pop(PALETTE_NAV_REQUESTED_KEY, None)
-
-    def prune_invalid(self) -> None:
-        """Drop stale ids that no longer build a dynamic page."""
-        self.command_ids = filter_command_ids(self.command_ids)
-        valid_ids = set(self.command_ids)
-        self.statement_cache = {
-            command_id: statement
-            for command_id, statement in self.statement_cache.items()
-            if command_id in valid_ids
-        }
+        if self.pending_nav == command_id:
+            self.pending_nav = None
+        if self.last_navigated_command_id == command_id:
+            self.last_navigated_command_id = None
 
     def update_dynamic_pages(
         self,
-        static_pages: list[st.Page],
+        static_pages: dict[str, list[st.Page]],
         *,
         app_dir: Path,
-    ) -> list[st.Page]:
-        """Prune, build st.Page objects, handle pending nav; return full page list."""
-        from components.command_palette import PENDING_NAV_COMMAND_KEY
-
-        self.prune_invalid()
-
-        pages = list(static_pages)
-        used_url_paths = {p.url_path for p in pages if p.url_path}
+    ) -> dict[str, list[st.Page]]:
+        """Wrap loaded pages as st.Page objects, handle pending nav; return full page list."""
+        pages = {group: list(group_pages) for group, group_pages in static_pages.items()}
+        used_url_paths = {
+            p.url_path
+            for group_pages in pages.values()
+            for p in group_pages
+            if p.url_path
+        }
         command_pages: dict[str, st.Page] = {}
+        data_sheets = pages.setdefault("Data Sheets", [])
 
-        for command_id in self.command_ids:
-            page = build_dynamic_page(command_id)
-            if page is None:
-                continue
-            page_fn, page_title = page
-            url_path = _dynamic_page_url_path(command_id, used_url_paths)
-            page_obj = st.Page(page_fn, title=page_title, icon="📄", url_path=url_path)
-            pages.append(page_obj)
-            command_pages[command_id] = page_obj
+        for loaded in self.pages:
+            url_path = _dynamic_page_url_path(loaded.command_id, used_url_paths)
+            page_obj = st.Page(
+                loaded.render_fn,
+                title=loaded.title,
+                icon="📄",
+                url_path=url_path,
+            )
+            data_sheets.append(page_obj)
+            command_pages[loaded.command_id] = page_obj
 
-        pending_command = st.session_state.pop(PENDING_NAV_COMMAND_KEY, None)
+        pending_command = self.consume_pending_navigation()
         if pending_command and pending_command in command_pages:
+            self.last_navigated_command_id = pending_command
             st.switch_page(command_pages[pending_command])
 
         return pages
 
 
-def init_page_state() -> PageState:
-    """Create and store PageState. Call once per session from Home.py."""
-    state = PageState()
+def init_page_state() -> OpenSheets:
+    """Create and store OpenSheets. Call once per session from Home.py."""
+    state = OpenSheets()
     st.session_state.dynamic_pages = state
     return state
 
 
-def get_page_state() -> PageState:
-    """Return the session's PageState (must already exist)."""
+def get_page_state() -> OpenSheets:
+    """Return the session's OpenSheets (must already exist)."""
     state = st.session_state.get("dynamic_pages")
 
     if not state:
         raise RuntimeError(
-            "PageState not initialized; call init_page_state() from Home.py first."
+            "OpenSheets not initialized; call init_page_state() from Home.py first."
         )
     return state
 

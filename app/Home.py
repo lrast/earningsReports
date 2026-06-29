@@ -41,9 +41,8 @@ Data interface for exploring earnings report filings and financial tables.
     st.caption("Cross-company, multi-year comparisons.")
 
 
-def build_pages() -> tuple[list[st.Page], dict[str, st.Page]]:
-    pages: list[st.Page] = []
-    page_by_file: dict[str, st.Page] = {}
+def build_pages() -> dict[str, list[st.Page]]:
+    pages: dict[str, list[st.Page]] = {"": [], "Data Sheets": []}
     for item in NAV_ITEMS:
         if item["file"] == "Home.py":
             page = st.Page(
@@ -59,9 +58,8 @@ def build_pages() -> tuple[list[st.Page], dict[str, st.Page]]:
                 icon=item["icon"],
                 default=item.get("default", False),
             )
-        pages.append(page)
-        page_by_file[item["file"]] = page
-    return pages, page_by_file
+        pages[""].append(page)
+    return pages
 
 
 # Run the global parts of the page
@@ -77,10 +75,10 @@ if not st.session_state.get("session_configured"):
 
 st.markdown(load_css("global.css"), unsafe_allow_html=True)
 
-pages, _page_by_file = build_pages()
+base_pages = build_pages()
 
 mount_command_palette()
 mount_sidebar()
 
-pages = get_page_state().update_dynamic_pages(pages, app_dir=APP_DIR)
+pages = get_page_state().update_dynamic_pages(base_pages, app_dir=APP_DIR)
 st.navigation(pages).run()

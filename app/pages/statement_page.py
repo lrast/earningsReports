@@ -1,88 +1,16 @@
+from __future__ import annotations
+
 import re
 from collections.abc import Callable
-from typing import TypedDict
 
 import streamlit as st
 from edgar import set_identity, Company, find
 
+from page_state import OpenSheets
+from utilities.parsed_command import ParsedCommand, display_name_from_parsed, identity_label
 from utilities.renderers import render_rich
 
 set_identity("Your Name yourname@domain.com")
-
-PALETTE_NAV_REQUESTED_KEY = "_command_palette_nav_requested"
-
-DISPLAY_NAMES = {
-    "balance_sheet": "Balance Sheet",
-    "cash_flow": "Cash Flow Statement",
-    "income": "Income Statement",
-    "equity": "Statement of Equity",
-    "comprehensive_income": "Comprehensive Income",
-}
-
-
-class ParsedCommand(TypedDict):
-    command_id: str
-    ticker_name: str | None
-    company_name: str | None
-    year: int
-    statement_name: str
-
-
-def parse_command_id(command_id: str) -> ParsedCommand | None:
-    """Parse a palette leaf id into identity, statement, and year."""
-    if not command_id:
-        return None
-
-    parts = command_id.split("/")
-    if len(parts) < 3:
-        return None
-
-    year_slug = parts[-1]
-    statement_slug = parts[-2]
-    identity_parts = parts[:-2]
-
-    try:
-        year = int(year_slug)
-    except ValueError:
-        return None
-
-    ticker_name = None
-    company_name = None
-    for part in identity_parts:
-        if part.startswith("ticker:"):
-            ticker_name = part.removeprefix("ticker:") or None
-        elif part.startswith("company:"):
-            company_name = part.removeprefix("company:") or None
-
-    if ticker_name is None and company_name is None:
-        return None
-
-    return ParsedCommand(
-        command_id=command_id,
-        ticker_name=ticker_name,
-        company_name=company_name,
-        year=year,
-        statement_name=statement_slug,
-    )
-
-
-def _identity_label(parsed: ParsedCommand) -> str:
-    ticker_name = parsed["ticker_name"]
-    company_name = parsed["company_name"]
-    if ticker_name and not company_name:
-        return ticker_name
-    if not ticker_name:
-        return company_name or ""
-    return f"{ticker_name} - {company_name}"
-
-
-def display_name_from_parsed(parsed: ParsedCommand) -> str:
-    """Sidebar title from parsed command id (no Edgar calls)."""
-    label = _identity_label(parsed)
-    statement_name = parsed["statement_name"]
-    year = parsed["year"]
-    display = DISPLAY_NAMES.get(statement_name, statement_name)
-    return f"{label} {display} ({year}) "
 
 
 def load_statement(parsed: ParsedCommand):
@@ -122,26 +50,23 @@ def load_statement(parsed: ParsedCommand):
             return "Statement not found."
 
 
-def build_dynamic_page(command_id: str) -> tuple[Callable[[], None], str] | None:
+def build_dynamic_page(
+    page_state: OpenSheets,
+    parsed: ParsedCommand,
+) -> tuple[Callable[[], None], str]:
     """Build a page renderer and title without fetching Edgar data.
 
     Data is loaded inside render_document_view when that page is active.
     """
-    parsed = parse_command_id(command_id)
-    if parsed is None:
-        return None
-
+    command_id = parsed["command_id"]
     page_title = display_name_from_parsed(parsed)
     widget_key = re.sub(
         r"[^a-zA-Z0-9_-]+",
         "_",
-        f"{_identity_label(parsed)}_{parsed['statement_name']}_{parsed['year']}",
+        f"{identity_label(parsed)}_{parsed['statement_name']}_{parsed['year']}",
     )
 
     def render_document_view() -> None:
-        from page_state import get_page_state
-
-        page_state = get_page_state()
         statement = page_state.get_statement(command_id)
         if statement is None:
             with st.spinner("Loading statement..."):
@@ -153,8 +78,3 @@ def build_dynamic_page(command_id: str) -> tuple[Callable[[], None], str] | None
             st.rerun()
 
     return render_document_view, page_title
-
-
-def filter_command_ids(command_ids: list[str]) -> list[str]:
-    """Keep only ids that build_dynamic_page accepts (drops stale bare names, etc.)."""
-    return [command_id for command_id in command_ids if parse_command_id(command_id) is not None]

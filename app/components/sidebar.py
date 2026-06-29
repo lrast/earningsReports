@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-from components.command_palette import SELECTED_COMMAND_KEY
-
 
 def mount_sidebar() -> None:
     """Render custom sidebar elements — last command pinned to bottom."""
@@ -25,6 +23,6 @@ def mount_sidebar() -> None:
 
     with st.sidebar.container(key="sidebar_bottom"):
         st.divider()
-        selected = st.session_state.get(SELECTED_COMMAND_KEY)
+        selected = st.session_state.get("command_history")
         st.caption("Last command")
         st.write(selected if selected else "—")
