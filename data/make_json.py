@@ -17,11 +17,11 @@ def make_commands_json():
 
     # make the statement_commands
     statement_commands = [
-                          { "slug": "balance_sheet", "name": "Balance Sheet" },
-                          { "slug": "income", "name": "Income" },
-                          { "slug": "equity", "name": "Equity" },
-                          { "slug": "cash_flow", "name": "Cash Flow" },
-                          { "slug": "comprehensive_income", "name": "Comprehensive Income" }
+                          {"slug": "balance_sheet", "name": "Balance Sheet"},
+                          {"slug": "income", "name": "Income"},
+                          {"slug": "equity", "name": "Equity"},
+                          {"slug": "cash_flow", "name": "Cash Flow"},
+                          {"slug": "comprehensive_income", "name": "Comprehensive Income"}
     ]
 
     # make the year commands

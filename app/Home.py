@@ -7,11 +7,8 @@ from pathlib import Path
 
 import streamlit as st
 
-from components.command_palette import (
-    PENDING_NAV_COMMAND_KEY,
-    SELECTED_COMMAND_KEY,
-    mount_command_palette,
-)
+from components.command_palette import PENDING_NAV_COMMAND_KEY, mount_command_palette
+from components.sidebar import mount_sidebar
 from utilities.load_assets import load_css
 from pages.statement_page import build_dynamic_page, filter_command_ids
 
@@ -19,7 +16,9 @@ APP_DIR = Path(__file__).resolve().parent
 
 NAV_ITEMS: list[dict] = [
     {"file": "Home.py", "title": "Home", "icon": "🏠", "default": True},
-    {"file": "pages/TableView.py", "title": "Yearly Financials", "icon": "📊"},
+    {"file": "pages/YearlyFinancials.py", "title": "Yearly Financials", "icon": "📊"},
+    {"file": "pages/MultiYearFinancials.py", "title": "Multi-Year Financials", "icon": "📈"},
+    {"file": "pages/SmartColumns.py", "title": "Smart Columns", "icon": "⚙️"},
 ]
 
 
@@ -29,14 +28,15 @@ def home() -> None:
         """
 Data interface for exploring earnings report filings and financial tables.
 
-Choose a view from the sidebar, or use the links below.
 """
     )
-    st.info("Use the command palette with **⌘K** (Mac) or **Ctrl+K** (Windows/Linux) to search earnings.")
+    st.info("Use the command palette with **⌘K** (Mac) or **Ctrl+K** (Windows/Linux) to search earnings Filings.")
 
     st.subheader("Views")
-    st.page_link("pages/TableView.py", label="Yearly Financials", icon="📊")
-    st.caption("Pivot and filter sheet data by year and line items.")
+    st.page_link("pages/YearlyFinancials.py", label="Yearly Financials", icon="📊")
+    st.caption("Cross-company, single year comparisons.")
+    st.page_link("pages/MultiYearFinancials.py", label="Multi-Year Financials", icon="📈")
+    st.caption("Cross-company, multi-year comparisons.")
 
 
 def build_pages() -> tuple[list[st.Page], dict[str, st.Page]]:
@@ -89,37 +89,7 @@ st.markdown(load_css("global.css"), unsafe_allow_html=True)
 pages, _page_by_file = build_pages()
 
 mount_command_palette()
-
-# custom sidebar elements
-with st.sidebar:
-    selected = st.session_state.get(SELECTED_COMMAND_KEY)
-    if selected:
-        st.caption("Last command")
-        st.write(selected)
-    else:
-        st.caption("Last command")
-        st.write("—")
-
-
-# button styling
-st.html(
-    """
-    <style>
-    /* Target the specific container key and force it to the bottom */
-    .st-key-sidebar_bottom {
-        position: absolute;
-        bottom: 20px;
-        left: 0;
-        width: 100%;
-        padding: 0 1rem; /* matches standard sidebar padding */
-    }
-    </style>
-    """
-)
-
-with st.sidebar.container(key="sidebar_bottom"):
-    st.divider()
-    st.button("", icon="➕", use_container_width=True)
+mount_sidebar()
 
 
 # Initialize session state to track user-created pages
