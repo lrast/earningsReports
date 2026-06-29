@@ -5,6 +5,7 @@ from collections.abc import Callable
 
 import streamlit as st
 
+from page_state import get_page_state
 from pages.statement_page import PALETTE_NAV_REQUESTED_KEY, parse_command_id
 from utilities.load_assets import COMMAND_PALETTE_CSS, load_css, load_js_component
 
@@ -23,12 +24,9 @@ def add_dynamic_page_from_command(command_id: str) -> str | None:
     if parse_command_id(command_id) is None:
         return None
 
-    pages = st.session_state.dynamic_pages
-    if command_id in pages:
+    if get_page_state().add(command_id):
         return command_id
-
-    pages.append(command_id)
-    return command_id
+    return None
 
 
 def mount_command_palette(*, on_change: Callable[[], None] | None = None):

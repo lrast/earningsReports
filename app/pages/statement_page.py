@@ -7,10 +7,8 @@ from edgar import set_identity, Company, find
 
 from utilities.renderers import render_rich
 
-
 set_identity("Your Name yourname@domain.com")
 
-DYNAMIC_STATEMENT_CACHE_KEY = "dynamic_statement_cache"
 PALETTE_NAV_REQUESTED_KEY = "_command_palette_nav_requested"
 
 DISPLAY_NAMES = {
@@ -124,15 +122,6 @@ def load_statement(parsed: ParsedCommand):
             return "Statement not found."
 
 
-def _remove_dynamic_page(command_id: str) -> None:
-    st.session_state.dynamic_pages.remove(command_id)
-    cache = st.session_state.get(DYNAMIC_STATEMENT_CACHE_KEY)
-    if isinstance(cache, dict):
-        cache.pop(command_id, None)
-    if st.session_state.get(PALETTE_NAV_REQUESTED_KEY) == command_id:
-        st.session_state.pop(PALETTE_NAV_REQUESTED_KEY, None)
-
-
 def build_dynamic_page(command_id: str) -> tuple[Callable[[], None], str] | None:
     """Build a page renderer and title without fetching Edgar data.
 
@@ -150,13 +139,17 @@ def build_dynamic_page(command_id: str) -> tuple[Callable[[], None], str] | None
     )
 
     def render_document_view() -> None:
-        cache = st.session_state.setdefault(DYNAMIC_STATEMENT_CACHE_KEY, {})
-        if command_id not in cache:
+        from page_state import get_page_state
+
+        page_state = get_page_state()
+        statement = page_state.get_statement(command_id)
+        if statement is None:
             with st.spinner("Loading statement..."):
-                cache[command_id] = load_statement(parsed)
-        render_rich(cache[command_id])
+                statement = load_statement(parsed)
+                page_state.set_statement(command_id, statement)
+        render_rich(statement)
         if st.button("Delete Page", key=f"del_{widget_key}"):
-            _remove_dynamic_page(command_id)
+            page_state.delete_page(command_id)
             st.rerun()
 
     return render_document_view, page_title
