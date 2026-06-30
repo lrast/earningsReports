@@ -11,7 +11,7 @@ from utilities.load_assets import load_css
 from components.command_palette import mount_command_palette
 from components.sidebar import mount_sidebar
 
-from page_state import get_page_state, init_page_state
+from page_state import get_dynamic_pages, init_page_state
 
 
 APP_DIR = Path(__file__).resolve().parent
@@ -80,5 +80,5 @@ base_pages = build_pages()
 mount_command_palette()
 mount_sidebar()
 
-pages = get_page_state().update_dynamic_pages(base_pages, app_dir=APP_DIR)
+pages = get_dynamic_pages().update_dynamic_pages(base_pages, app_dir=APP_DIR)
 st.navigation(pages).run()

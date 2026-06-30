@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import streamlit as st
+import polars as pl
 
 from utilities.parsed_command import ParsedCommand
 
@@ -108,20 +109,78 @@ class OpenSheets:
         return pages
 
 
+class DataSelections:
+    """State management for user data filter and selection choices."""
+
+    DEFAULT_SELECTED_COLUMNS: tuple[str, ...] = (
+        "Assets",
+        "Liabilities",
+        "Revenues",
+        "Gross Profit",
+        "Entity Public Float",
+        "Stockholders' Equity Attributable to Parent",
+        "Cost of Revenue",
+    )
+
+    def __init__(self) -> None:
+        self.selected_columns: list[str] = list(self.DEFAULT_SELECTED_COLUMNS)
+        self.selected_ciks: set[int] = set()
+
+    def cik_filter_expression(self) -> pl.Expr | bool:
+        """Polars filter keeping only selected CIKs; no-op when none are selected."""
+        if not self.selected_ciks:
+            return False
+        return pl.col("cik").is_in(list(self.selected_ciks))
+
+    def with_select_column(
+        self, frame: pl.DataFrame, columns: list[str]
+    ) -> pl.DataFrame:
+        """Add checkbox Select column and reorder for data_editor display."""
+        return (
+            frame
+            .with_columns(pl.col("cik").is_in(list(self.selected_ciks)).alias("Select"))
+            .select(["Select", "cik", "company", "tickers", *columns])
+        )
+
+    def sync_from_editor(self, edited_df: object) -> bool:
+        """Update selected_ciks from editor output; return True if changed."""
+        if isinstance(edited_df, pl.DataFrame):
+            checked_ciks = set(edited_df.filter(pl.col("Select"))["cik"].to_list())
+        else:
+            checked_ciks = set(edited_df.loc[edited_df["Select"], "cik"])
+
+        if checked_ciks == self.selected_ciks:
+            return False
+        self.selected_ciks = checked_ciks
+        return True
+
+
 def init_page_state() -> OpenSheets:
     """Create and store OpenSheets. Call once per session from Home.py."""
     state = OpenSheets()
     st.session_state.dynamic_pages = state
+    st.session_state.data_selection = DataSelections()
     return state
 
 
-def get_page_state() -> OpenSheets:
+def get_dynamic_pages() -> OpenSheets:
     """Return the session's OpenSheets (must already exist)."""
     state = st.session_state.get("dynamic_pages")
 
     if not state:
         raise RuntimeError(
             "OpenSheets not initialized; call init_page_state() from Home.py first."
+        )
+    return state
+
+
+def get_data_selection() -> DataSelections:
+    """Return the session's DataSelections (must already exist)."""
+    state = st.session_state.get("data_selection")
+
+    if not state:
+        raise RuntimeError(
+            "DataSelections not initialized; call init_page_state() from Home.py first."
         )
     return state
 

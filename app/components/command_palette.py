@@ -9,7 +9,7 @@ from utilities.parsed_command import ParsedCommand
 from utilities.load_assets import COMMAND_PALETTE_CSS, load_css, load_js_component
 from pages.statement_page import build_dynamic_page
 
-from page_state import get_page_state
+from page_state import get_dynamic_pages
 
 
 COMMAND_PALETTE_KEY = "_app_js_command_palette"
@@ -57,15 +57,15 @@ def add_dynamic_page_from_command(command_id: str) -> str | None:
     if parsed is None:
         return None
 
-    page_state = get_page_state()
+    current_pages = get_dynamic_pages()
     command_id = parsed["command_id"]
-    if page_state.has_page(command_id):
-        page_state.request_navigation(command_id)
+    if current_pages.has_page(command_id):
+        current_pages.request_navigation(command_id)
         return command_id
 
-    render_fn, title = build_dynamic_page(page_state, parsed)
-    if page_state.add_page(parsed, render_fn, title):
-        page_state.request_navigation(command_id)
+    render_fn, title = build_dynamic_page(current_pages, parsed)
+    if current_pages.add_page(parsed, render_fn, title):
+        current_pages.request_navigation(command_id)
         return command_id
     return None
 
