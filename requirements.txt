@@ -1,0 +1,19 @@
+# Streamlit app
+streamlit>=1.56
+altair
+polars
+humanize
+rich
+
+# SEC EDGAR data (imported as `edgar`)
+edgartools
+
+# Data pipeline & parquet storage
+pandas
+pyarrow
+
+# Analysis notebooks (data/analysis_and_cleaning.ipynb)
+matplotlib
+seaborn
+numpy
+tqdm

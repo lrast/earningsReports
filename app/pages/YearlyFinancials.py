@@ -4,14 +4,9 @@ import polars as pl
 from components.controls import ColumnControls
 from page_state import get_data_selection
 
-YEARLY_EDITOR_KEY = "yearly_financials_editor"
-SIDEBAR_COLLAPSED_KEY = "yearly_financials_sidebar_collapsed"
-SIDEBAR_WIDTH_KEY = "yearly_financials_sidebar_width"
-SIDEBAR_WIDTH_SLIDER_KEY = "yearly_financials_sidebar_width_slider"
-
+# layout
 MIN_TABLE_HEIGHT = 600
-# Header + 200px chart + axes/padding/margin between blocks (rounded up).
-SIDEBAR_ITEM_HEIGHT = 225
+SIDEBAR_ITEM_HEIGHT = 280
 DEFAULT_SIDEBAR_WIDTH = 0.22
 MIN_SIDEBAR_WIDTH = 0.15
 MAX_SIDEBAR_WIDTH = 0.45
@@ -23,8 +18,8 @@ labels = metadata['label']
 
 st.title("Yearly Financials")
 
-collapsed = st.session_state.setdefault(SIDEBAR_COLLAPSED_KEY, False)
-sidebar_frac = st.session_state.setdefault(SIDEBAR_WIDTH_KEY, DEFAULT_SIDEBAR_WIDTH)
+collapsed = st.session_state.setdefault("yearly_financials_sidebar_collapsed", False)
+sidebar_frac = st.session_state.setdefault("yearly_financials_sidebar_width", DEFAULT_SIDEBAR_WIDTH)
 
 if collapsed:
     main_col = st.container()
@@ -43,7 +38,7 @@ with main_col:
                 key="yearly_financials_sidebar_toggle",
                 help="Show the filter panel",
             ):
-                st.session_state[SIDEBAR_COLLAPSED_KEY] = False
+                st.session_state["yearly_financials_sidebar_collapsed"] = False
                 st.rerun()
 
     years = list(range(1994, 2027))[::-1]
@@ -57,7 +52,7 @@ with main_col:
         "Select Columns",
         labels,
         default=data_selection.selected_columns,
-        accept_new_options=True,
+        accept_new_options=False,
     )
     data_selection.selected_columns = list(columns)
 
@@ -68,9 +63,10 @@ with main_col:
 table_height = max(MIN_TABLE_HEIGHT, len(columns) * SIDEBAR_ITEM_HEIGHT)
 
 # Table controls in the sidebar
-filter_reset_nonce = st.session_state.setdefault("filter_reset_nonce", 0)
 
 if sidebar_col is not None:
+    filter_reset_nonce = st.session_state.setdefault("filter_reset_nonce", 0)
+
     with sidebar_col:
         with st.container(key="table_filter_sidebar"):
             reset_col, settings_col, toggle_col = st.columns([2, 1, 1], gap="small")
@@ -85,9 +81,9 @@ if sidebar_col is not None:
                         min_value=int(MIN_SIDEBAR_WIDTH * 100),
                         max_value=int(MAX_SIDEBAR_WIDTH * 100),
                         value=int(sidebar_frac * 100),
-                        key=SIDEBAR_WIDTH_SLIDER_KEY,
+                        key="yearly_financials_sidebar_width_slider",
                         on_change=lambda: st.session_state.update(
-                            {SIDEBAR_WIDTH_KEY: st.session_state[SIDEBAR_WIDTH_SLIDER_KEY] / 100}
+                            {"yearly_financials_sidebar_width": st.session_state["yearly_financials_sidebar_width_slider"] / 100}
                         ),
                     )
             with toggle_col:
@@ -96,7 +92,7 @@ if sidebar_col is not None:
                     key="yearly_financials_sidebar_collapse",
                     help="Hide the filter panel",
                 ):
-                    st.session_state[SIDEBAR_COLLAPSED_KEY] = True
+                    st.session_state["yearly_financials_sidebar_collapsed"] = True
                     st.rerun()
 
             for i, column in enumerate(columns):
@@ -116,15 +112,17 @@ with main_col:
     data_selection = get_data_selection()
 
     # apply filters from the sidebar selectors
-    table_data = full_data
-
-    to_show = table_data.pivot(on='label', values='value', index=['cik', 'company', 'tickers'])
+    to_show = full_data.pivot(on='label', values='value', index=['cik', 'company', 'tickers'])
+    # columns can be missing from individual years, fill those with nans
+    to_show = to_show.with_columns([pl.lit(None).alias(col) for col in columns
+                                    if col not in to_show.columns])
 
     filter_in_selected = data_selection.cik_filter_expression()
 
     for settings in column_controls.values():
         to_show = to_show.filter(settings.get_filter_expression() | filter_in_selected)
 
+    # ensure that selections are displayed as selected
     display_df = data_selection.with_select_column(to_show, columns)
 
     edited_df = st.data_editor(
@@ -133,7 +131,7 @@ with main_col:
         height=table_height,
         hide_index=True,
         num_rows="fixed",
-        key=YEARLY_EDITOR_KEY,
+        key="yearly_financials_editor",
         column_order=["Select", "company", "tickers", *columns],
         disabled=["cik", "company", "tickers", *columns],
         column_config={
