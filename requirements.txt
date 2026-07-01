@@ -4,6 +4,7 @@ altair
 polars
 humanize
 rich
+rapidfuzz
 
 # SEC EDGAR data (imported as `edgar`)
 edgartools

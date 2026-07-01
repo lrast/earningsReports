@@ -3,6 +3,7 @@ import polars as pl
 
 from components.controls import ColumnControls
 from page_state import get_data_selection
+from utilities.company_search import sort_by_company_relevance
 
 # layout
 MIN_TABLE_HEIGHT = 600
@@ -55,6 +56,12 @@ with main_col:
         accept_new_options=False,
     )
     data_selection.selected_columns = list(columns)
+
+    company_query = st.text_input(
+        "Company search",
+        placeholder="Search by company name or ticker…",
+        key="yearly_financials_company_search",
+    )
 
     column_controls = {col: ColumnControls(col) for col in columns}
 
@@ -121,6 +128,8 @@ with main_col:
 
     for settings in column_controls.values():
         to_show = to_show.filter(settings.get_filter_expression() | filter_in_selected)
+
+    to_show = sort_by_company_relevance(to_show, company_query)
 
     # ensure that selections are displayed as selected
     display_df = data_selection.with_select_column(to_show, columns)
